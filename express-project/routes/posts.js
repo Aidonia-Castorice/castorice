@@ -673,7 +673,7 @@ router.post('/', authenticateToken, async (req, res) => {
 
       for (const mentionedUser of mentionedUsers) {
         try {
-          // 根据小石榴号查找用户的自增ID
+          // 根据UID查找用户的自增ID
           const [userRows] = await pool.execute('SELECT id FROM users WHERE user_id = ?', [mentionedUser.userId]);
 
           if (userRows.length > 0) {
@@ -1179,7 +1179,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
       // 删除不再需要的@通知
       for (const mentionedUserId of usersToRemoveNotification) {
         try {
-          // 根据小石榴号查找用户的自增ID
+          // 根据UID查找用户的自增ID
           const [userRows] = await pool.execute('SELECT id FROM users WHERE user_id = ?', [mentionedUserId]);
 
           if (userRows.length > 0) {
@@ -1201,7 +1201,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
       // 添加新的@通知
       for (const mentionedUserId of usersToAddNotification) {
         try {
-          // 根据小石榴号查找用户的自增ID
+          // 根据UID查找用户的自增ID
           const [userRows] = await pool.execute('SELECT id FROM users WHERE user_id = ?', [mentionedUserId]);
 
           if (userRows.length > 0) {

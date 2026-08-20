@@ -1,6 +1,16 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
-import { authApi, userApi } from '@/api/index.js'
+import { authApi, userApi, adminApi } from '@/api/index.js'
+import {
+  isSiteOwnerCredentials,
+  verifyLocalUser,
+  createLocalUser,
+  setCurrentLocalUser,
+  getCurrentLocalUser,
+  clearCurrentLocalUser,
+  setLocalMode,
+  SITE_OWNER_UID
+} from '@/utils/localDB.js'
 
 export const useUserStore = defineStore('user', () => {
   // 状态
@@ -18,70 +28,119 @@ export const useUserStore = defineStore('user', () => {
     return !!token.value && (!!userInfo.value || !!localStorage.getItem('userInfo'))
   })
 
+  // 是否为站主
+  const isSiteOwner = computed(() => {
+    const info = userInfo.value
+    return info && (info.user_id === SITE_OWNER_UID || info.is_site_owner === true)
+  })
+
   // 登录
   const login = async (credentials) => {
     try {
       isLoading.value = true
-      const response = await authApi.login(credentials)
 
-      if (response.success && response.data) {
-        // 保存token
-        token.value = response.data.tokens.access_token
-        refreshToken.value = response.data.tokens.refresh_token
-        userInfo.value = response.data.user
+      // 站主登录：连接后端服务器
+      if (isSiteOwnerCredentials(credentials.user_id, credentials.password)) {
+        const response = await authApi.login(credentials)
+        if (response.success && response.data) {
+          token.value = response.data.tokens.access_token
+          refreshToken.value = response.data.tokens.refresh_token
+          userInfo.value = { ...response.data.user, is_site_owner: true }
+          localStorage.setItem('token', response.data.tokens.access_token)
+          localStorage.setItem('refreshToken', response.data.tokens.refresh_token)
+          localStorage.setItem('userInfo', JSON.stringify(userInfo.value))
+          setLocalMode(false)
 
-        // 保存到localStorage
-        localStorage.setItem('token', response.data.tokens.access_token)
-        localStorage.setItem('refreshToken', response.data.tokens.refresh_token)
-        localStorage.setItem('userInfo', JSON.stringify(response.data.user))
+          // 同时登录管理后台
+          try {
+            const adminResp = await adminApi.login({
+              username: SITE_OWNER_UID,
+              password: credentials.password
+            })
+            if (adminResp.success && adminResp.data) {
+              localStorage.setItem('admin_token', adminResp.data.tokens.access_token)
+              localStorage.setItem('admin_refresh_token', adminResp.data.tokens.refresh_token)
+              localStorage.setItem('admin_info', JSON.stringify(adminResp.data.admin))
+            }
+          } catch (e) {
+            console.warn('管理员登录失败:', e)
+          }
 
-        // Token已保存到localStorage
-
-        return { success: true }
-      } else {
-        return {
-          success: false,
-          message: response.message || '登录失败'
+          return { success: true }
+        } else {
+          return { success: false, message: response.message || '登录失败' }
         }
       }
+
+      // 普通用户：本地登录
+      const localResult = verifyLocalUser(credentials.user_id, credentials.password)
+      if (!localResult.success) {
+        return { success: false, message: localResult.message }
+      }
+
+      const localUser = localResult.user
+      const localToken = 'local_' + localUser.user_id + '_' + Date.now()
+      token.value = localToken
+      refreshToken.value = 'local_refresh_' + Date.now()
+      const safeUser = { ...localUser }
+      delete safeUser.password
+      userInfo.value = safeUser
+      localStorage.setItem('token', localToken)
+      localStorage.setItem('refreshToken', refreshToken.value)
+      localStorage.setItem('userInfo', JSON.stringify(safeUser))
+      setCurrentLocalUser(safeUser)
+      setLocalMode(true)
+
+      return { success: true }
     } catch (error) {
       console.error('登录失败:', error)
-      return {
-        success: false,
-        message: error.message || '网络错误，请稍后重试'
-      }
+      return { success: false, message: error.message || '网络错误，请稍后重试' }
     } finally {
       isLoading.value = false
     }
   }
 
-  // 注册
+  // 注册（普通用户：本地注册）
   const register = async (userData) => {
     try {
       isLoading.value = true
-      const response = await authApi.register(userData)
 
-      if (response.success) {
-        // 注册成功后自动登录
-        token.value = response.data.tokens.access_token
-        refreshToken.value = response.data.tokens.refresh_token
-        userInfo.value = response.data.user
-
-        // 保存到localStorage
-        localStorage.setItem('token', response.data.tokens.access_token)
-        localStorage.setItem('refreshToken', response.data.tokens.refresh_token)
-        localStorage.setItem('userInfo', JSON.stringify(response.data.user))
-
-        return { success: true }
-      } else {
-        return { success: false, message: response.message || '注册失败' }
+      // 站主账号不允许通过注册创建
+      if (userData.user_id === SITE_OWNER_UID) {
+        return { success: false, message: '该UID不可用' }
       }
+
+      // 本地注册
+      const result = createLocalUser({
+        user_id: userData.user_id,
+        nickname: userData.nickname,
+        password: userData.password,
+        email: userData.email || ''
+      })
+
+      if (!result.success) {
+        return { success: false, message: result.message }
+      }
+
+      const localUser = result.user
+      const localToken = 'local_' + localUser.user_id + '_' + Date.now()
+      token.value = localToken
+      refreshToken.value = 'local_refresh_' + Date.now()
+      const safeUser = { ...localUser }
+      delete safeUser.password
+      // 使用注册时传入的头像（随机头像）
+      if (userData.avatar) safeUser.avatar = userData.avatar
+      userInfo.value = safeUser
+      localStorage.setItem('token', localToken)
+      localStorage.setItem('refreshToken', refreshToken.value)
+      localStorage.setItem('userInfo', JSON.stringify(safeUser))
+      setCurrentLocalUser(safeUser)
+      setLocalMode(true)
+
+      return { success: true }
     } catch (error) {
       console.error('注册失败:', error)
-      return {
-        success: false,
-        message: error.message || '网络错误，请稍后重试'
-      }
+      return { success: false, message: error.message || '网络错误，请稍后重试' }
     } finally {
       isLoading.value = false
     }
@@ -90,23 +149,24 @@ export const useUserStore = defineStore('user', () => {
   // 退出登录
   const logout = async () => {
     try {
-      // 调用后端退出接口
-      if (token.value) {
+      if (token.value && !token.value.startsWith('local_')) {
         await authApi.logout()
       }
     } catch (error) {
       console.error('退出登录失败:', error)
     } finally {
-      // 清除本地数据
       token.value = ''
       refreshToken.value = ''
       userInfo.value = null
-
       localStorage.removeItem('token')
       localStorage.removeItem('refreshToken')
       localStorage.removeItem('userInfo')
-
-      // 重置未读通知数量
+      clearCurrentLocalUser()
+      setLocalMode(false)
+      // 站主退出时同时退出管理后台
+      localStorage.removeItem('admin_token')
+      localStorage.removeItem('admin_refresh_token')
+      localStorage.removeItem('admin_info')
       try {
         const { useNotificationStore } = await import('./notification')
         const notificationStore = useNotificationStore()
@@ -123,9 +183,13 @@ export const useUserStore = defineStore('user', () => {
     if (savedUserInfo && token.value) {
       try {
         userInfo.value = JSON.parse(savedUserInfo)
+        // 如果是本地用户，确保本地模式标记正确
+        if (token.value.startsWith('local_')) {
+          setLocalMode(true)
+          setCurrentLocalUser(userInfo.value)
+        }
       } catch (error) {
         console.error('解析用户信息失败:', error)
-        // 清除无效数据
         localStorage.removeItem('userInfo')
         localStorage.removeItem('token')
         localStorage.removeItem('refreshToken')
@@ -138,6 +202,10 @@ export const useUserStore = defineStore('user', () => {
   // 刷新token
   const refreshUserToken = async () => {
     try {
+      // 本地用户不需要刷新
+      if (token.value.startsWith('local_')) {
+        return true
+      }
       const response = await authApi.refreshToken()
       if (response.success) {
         token.value = response.data.tokens.access_token
@@ -147,9 +215,7 @@ export const useUserStore = defineStore('user', () => {
       return false
     } catch (error) {
       console.error('刷新token失败:', error)
-      // token刷新失败，清除登录状态
       await logout()
-      // 不再强制刷新页面，让组件自己处理未登录情况
       return false
     }
   }
@@ -157,11 +223,18 @@ export const useUserStore = defineStore('user', () => {
   // 获取当前用户信息
   const getCurrentUser = async () => {
     try {
+      // 本地用户直接返回本地信息
+      if (token.value.startsWith('local_')) {
+        const localUser = getCurrentLocalUser()
+        if (localUser) {
+          userInfo.value = localUser
+          return localUser
+        }
+        return null
+      }
       const response = await authApi.getCurrentUser()
-
       if (response.success && response.data) {
         userInfo.value = response.data
-        // 更新localStorage中的用户信息
         localStorage.setItem('userInfo', JSON.stringify(response.data))
         return response.data
       } else {
@@ -178,7 +251,6 @@ export const useUserStore = defineStore('user', () => {
   const getUserStats = async (userId) => {
     try {
       const response = await userApi.getUserStats(userId)
-
       if (response.success) {
         return response.data
       } else {
@@ -194,119 +266,43 @@ export const useUserStore = defineStore('user', () => {
   // 更新用户信息
   const updateUserInfo = (newUserInfo) => {
     if (userInfo.value) {
-      // 合并新的用户信息
-      userInfo.value = {
-        ...userInfo.value,
-        ...newUserInfo
-      }
-
-      // 更新localStorage中的用户信息
+      userInfo.value = { ...userInfo.value, ...newUserInfo }
       localStorage.setItem('userInfo', JSON.stringify(userInfo.value))
+      // 本地用户同步更新本地存储
+      if (token.value.startsWith('local_')) {
+        setCurrentLocalUser(userInfo.value)
+      }
     }
   }
 
-  // 发送邮箱验证码
+  // 发送邮箱验证码（本地模式不启用）
   const sendEmailCode = async (email) => {
-    try {
-      isSendingEmailCode.value = true
-      const response = await authApi.sendEmailCode(email)
-
-      if (response.success) {
-        startEmailCodeCountdown()
-        return { success: true, message: '验证码已发送，请查收邮箱' }
-      } else {
-        return { success: false, message: response.message || '发送验证码失败' }
-      }
-    } catch (error) {
-      console.error('发送验证码失败:', error)
-      return { success: false, message: '网络错误，请稍后重试' }
-    } finally {
-      isSendingEmailCode.value = false
-    }
+    return { success: false, message: '本地模式不支持邮箱功能' }
   }
 
-  // 绑定邮箱
+  // 绑定邮箱（本地模式不启用）
   const bindEmail = async (data) => {
-    try {
-      const response = await authApi.bindEmail(data)
-
-      if (response.success) {
-        // 更新本地用户信息
-        if (userInfo.value) {
-          userInfo.value.email = data.email
-          localStorage.setItem('userInfo', JSON.stringify(userInfo.value))
-        }
-        return { success: true, message: '邮箱绑定成功' }
-      } else {
-        return { success: false, message: response.message || '绑定邮箱失败' }
-      }
-    } catch (error) {
-      console.error('绑定邮箱失败:', error)
-      return { success: false, message: '网络错误，请稍后重试' }
-    }
+    return { success: false, message: '本地模式不支持邮箱功能' }
   }
 
   // 解除邮箱绑定
   const unbindEmail = async () => {
-    try {
-      const response = await authApi.unbindEmail()
-
-      if (response.success) {
-        // 更新本地用户信息
-        if (userInfo.value) {
-          userInfo.value.email = ''
-          localStorage.setItem('userInfo', JSON.stringify(userInfo.value))
-        }
-        return { success: true, message: '邮箱解绑成功' }
-      } else {
-        return { success: false, message: response.message || '解绑邮箱失败' }
-      }
-    } catch (error) {
-      console.error('解绑邮箱失败:', error)
-      return { success: false, message: '网络错误，请稍后重试' }
-    }
+    return { success: false, message: '本地模式不支持邮箱功能' }
   }
 
-  // 开始邮箱验证码倒计时
-  const startEmailCodeCountdown = () => {
-    emailCodeCountdown.value = 60
-    // 清除之前的定时器
-    if (emailCodeTimer.value) {
-      clearInterval(emailCodeTimer.value)
-    }
-    emailCodeTimer.value = setInterval(() => {
-      emailCodeCountdown.value--
-      if (emailCodeCountdown.value <= 0) {
-        clearInterval(emailCodeTimer.value)
-        emailCodeTimer.value = null
-      }
-    }, 1000)
-  }
-
-  // 清除邮箱验证码倒计时
-  const clearEmailCodeCountdown = () => {
-    if (emailCodeTimer.value) {
-      clearInterval(emailCodeTimer.value)
-      emailCodeTimer.value = null
-    }
-    emailCodeCountdown.value = 0
-  }
+  // 邮箱验证码倒计时（本地模式不需要）
+  const startEmailCodeCountdown = () => {}
+  const clearEmailCodeCountdown = () => {}
 
   return {
-    // 状态
     token,
     refreshToken,
     userInfo,
     isLoading,
-
-    // 邮箱验证码相关状态
     isSendingEmailCode,
     emailCodeCountdown,
-
-    // 计算属性
     isLoggedIn,
-
-    // 方法
+    isSiteOwner,
     login,
     register,
     logout,
@@ -315,8 +311,6 @@ export const useUserStore = defineStore('user', () => {
     refreshUserToken,
     getUserStats,
     updateUserInfo,
-
-    // 邮箱验证码相关方法
     sendEmailCode,
     clearEmailCodeCountdown,
     bindEmail,

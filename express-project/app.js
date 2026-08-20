@@ -1,5 +1,5 @@
 /**
- * 小石榴校园图文社区 - Express后端服务
+ * 芙芙不服校园图文社区 - Express后端服务
  * 
  * @author ZTMYO
  * @github https://github.com/ZTMYO
@@ -16,6 +16,8 @@ const config = require('./config/config');
 const { HTTP_STATUS, RESPONSE_CODES } = require('./constants');
 // 导入自动解封功能
 const { startAutoUnbanService } = require('./utils/autoUnban');
+// 导入启动初始化
+const { initializeOnStartup } = require('./utils/startupSeed');
 
 // 导入路由模块
 const authRoutes = require('./routes/auth');
@@ -97,14 +99,23 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/categories', categoriesRoutes);
 app.use('/api/files', filesRoutes);
 
+// 静态前端文件服务（单容器部署）
+const publicDir = path.join(__dirname, 'public');
+app.use(express.static(publicDir));
+// SPA 回退：非 API 路由返回 index.html
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api')) return next();
+  res.sendFile(path.join(publicDir, 'index.html'));
+});
+
 // 错误处理中间件
 app.use((err, req, res, next) => {
   console.error('服务器错误:', err);
   res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ code: RESPONSE_CODES.ERROR, message: '服务器内部错误' });
 });
 
-// 404 处理
-app.use('*', (req, res) => {
+// 404 处理（仅 API）
+app.use('/api/*', (req, res) => {
   res.status(HTTP_STATUS.NOT_FOUND).json({ code: RESPONSE_CODES.NOT_FOUND, message: '接口不存在' });
 });
 
@@ -116,6 +127,8 @@ const PORT = config.server.port;
 app.listen(PORT, () => {
   console.log(`● 服务器运行在端口 ${PORT}`);
   console.log(`● 环境: ${config.server.env}`);
+  // 执行启动初始化（站主账号、分类、示例帖子）
+  initializeOnStartup();
 });
 
 module.exports = app;

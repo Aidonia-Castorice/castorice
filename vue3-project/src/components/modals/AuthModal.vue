@@ -8,16 +8,16 @@
 
       <div class="auth-content">
         <div class="auth-header">
-          <h2 class="auth-title">{{ isLoginMode ? '登录小石榴' : '注册小石榴' }}</h2>
-          <p class="auth-subtitle">{{ isLoginMode ? '欢迎回来！' : '加入我们，开始分享美好生活' }}</p>
+          <h2 class="auth-title">{{ isLoginMode ? '爷' : '注册芙芙不服' }}</h2>
+          <p class="auth-subtitle">{{ isLoginMode ? '欢迎回家！' : '愿此行，终抵群星' }}</p>
         </div>
 
         <form @submit.prevent="handleSubmit" class="auth-form" novalidate autocomplete="off">
           <div class="form-group">
-            <label for="user_id" class="form-label">小石榴号</label>
+            <label for="user_id" class="form-label">UID</label>
             <input type="text" id="user_id" v-model="formData.user_id" class="form-input"
               :class="{ 'error': showErrors && errors.user_id }"
-              :placeholder="isLoginMode ? '请输入小石榴号' : '请输入小石榴号（3-15位字母数字下划线）'" maxlength="15"
+              :placeholder="isLoginMode ? '请输入UID' : '请输入UID（3-15位字母数字下划线）'" maxlength="15"
               autocomplete="off" @input="clearError('user_id')" />
             <span v-if="showErrors && errors.user_id" class="error-message">{{ errors.user_id }}</span>
           </div>
@@ -117,6 +117,7 @@ import MessageToast from '@/components/MessageToast.vue'
 import CaptchaModal from '@/components/modals/CaptchaModal.vue'
 import { useUserStore } from '@/stores/user.js'
 import { useScrollLock } from '@/composables/useScrollLock'
+import { getRandomAvatar } from '@/utils/avatar.js'
 
 const props = defineProps({
   initialMode: {
@@ -193,29 +194,43 @@ const validateUserId = async () => {
   errors.user_id = ''
 
   if (!formData.user_id.trim()) {
-    errors.user_id = '请输入小石榴号'
+    errors.user_id = '请输入UID'
     return
   }
 
   if (formData.user_id.length < 3 || formData.user_id.length > 15) {
-    errors.user_id = '小石榴号长度必须在3-15位之间'
+    errors.user_id = 'UID长度必须在3-15位之间'
     return
   }
 
   if (!/^[a-zA-Z0-9_]+$/.test(formData.user_id)) {
-    errors.user_id = '小石榴号只能包含字母、数字和下划线'
+    errors.user_id = 'UID只能包含字母、数字和下划线'
     return
   }
 
   // 注册模式下检查用户ID是否已存在
   if (!isLoginMode.value) {
+    // 先检查本地账户
+    try {
+      const { findLocalUser, SITE_OWNER_UID } = await import('@/utils/localDB.js')
+      if (formData.user_id === SITE_OWNER_UID) {
+        errors.user_id = 'UID已存在'
+        return
+      }
+      if (findLocalUser(formData.user_id)) {
+        errors.user_id = 'UID已存在'
+        return
+      }
+    } catch (e) {
+      console.error('检查本地UID失败:', e)
+    }
     try {
       const response = await fetch(`/api/auth/check-user-id?user_id=${encodeURIComponent(formData.user_id)}`)
       const result = await response.json()
 
       if (result.code === 200) {
         if (!result.data.isUnique) {
-          errors.user_id = '小石榴号已存在'
+          errors.user_id = 'UID已存在'
           return
         }
       } else {
@@ -429,7 +444,7 @@ const handleSubmit = async () => {
     }
 
     if (isUserIdEmpty) {
-      unifiedMessage.value = '请输入小石榴号'
+      unifiedMessage.value = '请输入UID'
       return
     }
 
@@ -479,7 +494,7 @@ const performSubmit = async () => {
         password: formData.password,
         captchaId: captchaId.value,
         captchaText: formData.captchaText,
-        avatar: new URL('@/assets/imgs/avatar.png', import.meta.url).href,
+        avatar: getRandomAvatar(),
         bio: '用户没有任何简介',
         location: '未知'
       }

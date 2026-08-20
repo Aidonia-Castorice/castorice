@@ -46,3 +46,8 @@ Thumbs.db
 
 # uploads
 express-project/uploads/
+# SQLite data
+express-project/data/
+
+# Test files
+.env.test

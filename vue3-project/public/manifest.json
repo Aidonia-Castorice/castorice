@@ -1,6 +1,6 @@
 {
-  "name": "小石榴 - 你的校园图文部落",
-  "short_name": "小石榴",
+  "name": "芙芙不服",
+  "short_name": "芙芙不服",
   "icons": [
     {
       "src": "/android-icon-192x192.png",
@@ -30,7 +30,7 @@
   ],
   "start_url": "/",
   "display": "standalone",
-  "theme_color": "#ff6b6b",
+  "theme_color": "#ff2442",
   "background_color": "#ffffff",
-  "description": "小石榴图文社区 - 你的校园图文部落"
+  "description": "芙芙不服"
 }

@@ -441,7 +441,7 @@ const getAllImageData = async () => {
   const allImageData = []
 
   for (const item of imageList.value) {
-    if (item.uploaded && item.url && !item.url.startsWith('data:')) {
+    if (item.uploaded && item.url) {
       // 已上传的图片，直接使用URL
       allImageData.push(item.url)
     }
@@ -530,7 +530,7 @@ const uploadAllImages = async () => {
   // 如果没有需要上传的新图片，收集所有已有的URL并返回
   if (unuploadedImages.length === 0) {
     const existingUrls = imageList.value
-      .filter(item => item.uploaded && item.url && !item.url.startsWith('data:'))
+      .filter(item => item.uploaded && item.url)
       .map(item => item.url)
     return existingUrls
   }
@@ -562,7 +562,7 @@ const uploadAllImages = async () => {
 
       // 收集所有图片URL（按照imageList的顺序）
       const allUrls = imageList.value
-        .filter(item => item.uploaded && item.url && !item.url.startsWith('data:'))
+        .filter(item => item.uploaded && item.url)
         .map(item => item.url)
       return allUrls
     } else {

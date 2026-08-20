@@ -29,7 +29,7 @@ onMounted(() => {
 const columns = [
   { key: 'id', label: 'ID', type: 'post-link', sortable: true },
   { key: 'title', label: '标题', type: 'content', sortable: false },
-  { key: 'user_display_id', label: '小石榴号', type: 'user-link', sortable: false },
+  { key: 'user_display_id', label: 'UID', type: 'user-link', sortable: false },
   { key: 'category', label: '分类', sortable: false },
   { key: 'type', label: '类型', type: 'mapped', map: { 1: '图文', 2: '视频' }, sortable: false },
   {
@@ -139,7 +139,7 @@ const searchFields = computed(() => [
       { value: '3', label: '未过审' }
     ]
   },
-  { key: 'user_display_id', label: '作者小石榴号', placeholder: '搜索作者小石榴号' }
+  { key: 'user_display_id', label: '作者UID', placeholder: '搜索作者UID' }
 ])
 </script>
 

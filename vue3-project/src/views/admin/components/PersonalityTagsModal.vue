@@ -15,7 +15,7 @@
             </div>
           </div>
           <div class="tag-item">
-            <div class="tag-label">星座</div>
+            <div class="tag-label">命途</div>
             <div class="tag-value" :class="{ empty: !personalityTags?.zodiac_sign }">{{ personalityTags?.zodiac_sign ||
               '未设置' }}</div>
           </div>

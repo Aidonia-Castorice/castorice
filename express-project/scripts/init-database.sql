@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `gender` varchar(10) DEFAULT NULL COMMENT '性别',
-  `zodiac_sign` varchar(20) DEFAULT NULL COMMENT '星座',
+  `zodiac_sign` varchar(20) DEFAULT NULL COMMENT '命途',
   `mbti` varchar(4) DEFAULT NULL COMMENT 'MBTI人格类型',
   `education` varchar(50) DEFAULT NULL COMMENT '学历',
   `major` varchar(100) DEFAULT NULL COMMENT '专业',

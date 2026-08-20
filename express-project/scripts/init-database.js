@@ -108,7 +108,7 @@ class DatabaseInitializer {
       CREATE TABLE IF NOT EXISTS \`users\` (
         \`id\` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '用户ID',
         \`password\` varchar(255) DEFAULT NULL COMMENT '密码',
-        \`user_id\` varchar(50) NOT NULL COMMENT '小石榴号',
+        \`user_id\` varchar(50) NOT NULL COMMENT 'UID',
         \`nickname\` varchar(100) NOT NULL COMMENT '昵称',
         \`email\` varchar(100) DEFAULT NULL COMMENT '邮箱',
         \`avatar\` varchar(500) DEFAULT NULL COMMENT '头像URL',
@@ -122,7 +122,7 @@ class DatabaseInitializer {
         \`created_at\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
         \`updated_at\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
         \`gender\` varchar(10) DEFAULT NULL COMMENT '性别',
-        \`zodiac_sign\` varchar(20) DEFAULT NULL COMMENT '星座',
+        \`zodiac_sign\` varchar(20) DEFAULT NULL COMMENT '命途',
         \`mbti\` varchar(4) DEFAULT NULL COMMENT 'MBTI人格类型',
         \`education\` varchar(50) DEFAULT NULL COMMENT '学历',
         \`major\` varchar(100) DEFAULT NULL COMMENT '专业',
@@ -529,7 +529,7 @@ class DatabaseInitializer {
 
   async run() {
     try {
-      console.log('=== 小石榴图文社区数据库初始化 ===\n');
+      console.log('=== 芙芙不服图文社区数据库初始化 ===\n');
 
       // 创建数据库
       await this.createDatabase();

@@ -2,6 +2,9 @@ import axios from 'axios'
 import apiConfig from '@/config/api.js'
 import { HTTP_STATUS, ERROR_MESSAGES } from '@/config/constants.js'
 import messageManager from '@/utils/messageManager.js'
+import { isLocalMode } from '@/utils/localDB.js'
+import * as db from '@/utils/localDB.js'
+import { handleLocalRequest, mergeLocalComments } from './localApi.js'
 
 // 创建axios实例
 const request = axios.create({
@@ -10,30 +13,68 @@ const request = axios.create({
   headers: apiConfig.defaultHeaders
 })
 
+// 判断是否为写操作
+function isWriteMethod(method) {
+  return ['post', 'put', 'delete', 'patch'].includes(method.toLowerCase())
+}
+
 // 请求拦截器
 request.interceptors.request.use(
-  config => {
+  async config => {
+    const localMode = isLocalMode()
     const isAdminRequest = config.url && config.url.includes('/auth/admin/')
-    const isInAdminPage = window.location.pathname.startsWith('/admin')
+    const isInAdminPage = typeof window !== 'undefined' && window.location.pathname.startsWith('/admin')
+
+    if (localMode && !isAdminRequest && !isInAdminPage) {
+      const method = (config.method || 'get').toLowerCase()
+      const needsLocal = isWriteMethod(method) ||
+        config.url === '/auth/me' ||
+        config.url === '/auth/refresh' ||
+        config.url === '/auth/logout' ||
+        config.url?.startsWith('/notifications') ||
+        config.url?.includes('/follow') ||
+        config.url?.includes('/collect') ||
+        (config.url?.startsWith('/users/') && method === 'get') ||
+        config.url === '/upload/single' ||
+        config.url === '/upload/multiple' ||
+        config.url === '/posts/following' ||
+        (config.url === '/posts' && method === 'get' && config.params?.status === 1) ||
+        config.url?.startsWith('/search')
+
+      if (needsLocal) {
+        let reqData = config.data
+        if (typeof reqData === 'string') {
+          try { reqData = JSON.parse(reqData) } catch { /* keep as string */ }
+        }
+        const localResult = await handleLocalRequest(method, config.url, reqData, { params: config.params })
+        if (localResult !== null) {
+          return Promise.reject({
+            __localHandled: true,
+            response: {
+              status: 200,
+              data: { code: localResult.success ? 200 : 400, message: localResult.message, data: localResult.data },
+              __localHandled: true,
+              __localSuccess: localResult.success
+            }
+          })
+        }
+      }
+    }
 
     if (isAdminRequest || isInAdminPage) {
-      // admin相关请求或在admin页面时使用admin token
       const adminToken = localStorage.getItem('admin_token')
       if (adminToken) {
         config.headers.Authorization = `Bearer ${adminToken}`
       }
     } else {
-      // 普通用户请求使用普通token
       const token = localStorage.getItem('token')
       if (token) {
         config.headers.Authorization = `Bearer ${token}`
       }
     }
-
     return config
   },
   error => {
-    // 对请求错误做些什么
     console.error('❌ 请求配置错误:', error)
     return Promise.reject(error)
   }
@@ -42,66 +83,64 @@ request.interceptors.request.use(
 // 响应拦截器
 request.interceptors.response.use(
   (response) => {
-    // 对于后端返回的 { code, message, data } 格式，转换为前端期望的 { success, message, data } 格式
     if (response.data && response.data.hasOwnProperty('code')) {
-      return {
+      const result = {
         success: response.data.code === HTTP_STATUS.OK,
         message: response.data.message,
         data: response.data.data
       }
+      // 本地模式：合并本地数据到服务器响应
+      if (isLocalMode() && response.config?.url) {
+        return postProcessResponse(response.config.url, result, response.config.params)
+      }
+      return result
     }
-
-    // 其他情况直接返回原始数据
     return response.data
   },
   async error => {
-    // 对响应错误做点什么
+    // 本地模式处理的响应
+    if (error.__localHandled || (error.response && error.response.__localHandled)) {
+      const resp = error.response
+      return {
+        success: resp.__localSuccess !== false && resp.data.code === 200,
+        message: resp.data.message,
+        data: resp.data.data
+      }
+    }
+
     if (error.response) {
-      // 处理特定的HTTP状态码
       let errorMessage = ERROR_MESSAGES.REQUEST_FAILED
       switch (error.response.status) {
         case HTTP_STATUS.UNAUTHORIZED:
-          // 未授权，需要区分是会话过期还是未登录状态
           console.log('检测到401错误，开始处理未授权访问')
-          
-          // 判断是管理员还是普通用户
           const isAdminPage = window.location.pathname.startsWith('/admin')
           const isAdminRequest = error.config?.url?.includes('/auth/admin/')
-          
-          console.log('页面类型判断:', { isAdminPage, isAdminRequest })
-          
           if (isAdminPage || isAdminRequest) {
-            // 管理员相关请求
             const adminToken = localStorage.getItem('admin_token')
             if (adminToken) {
-              // 有token但401，说明是会话过期
               console.log('管理员会话过期，清除本地存储')
               localStorage.removeItem('admin_token')
               localStorage.removeItem('admin_refresh_token')
               localStorage.removeItem('admin_info')
-              // 只有在登录页面才跳转，避免死循环
               if (!window.location.pathname.includes('/admin/login')) {
                 window.location.href = '/admin/login'
               }
               errorMessage = ERROR_MESSAGES.SESSION_EXPIRED
             } else {
-              // 没有token，说明是未登录状态，不需要跳转
               errorMessage = ERROR_MESSAGES.UNAUTHORIZED
             }
           } else {
-            // 普通用户相关请求
             const userToken = localStorage.getItem('token')
             if (userToken) {
-              // 有token但401，说明是会话过期
               console.log('普通用户会话过期，清除本地存储')
               localStorage.removeItem('token')
               localStorage.removeItem('refreshToken')
               localStorage.removeItem('userInfo')
-              // 跳转到首页
+              localStorage.removeItem('fufu_local_mode')
+              localStorage.removeItem('fufu_local_current_user')
               window.location.href = '/'
               errorMessage = ERROR_MESSAGES.SESSION_EXPIRED
             } else {
-              // 没有token，说明是未登录状态，不需要跳转
               errorMessage = ERROR_MESSAGES.UNAUTHORIZED
             }
           }
@@ -127,8 +166,6 @@ request.interceptors.response.use(
         default:
           errorMessage = error.response.data?.message || `请求失败 (${error.response.status})`
       }
-
-      // 如果服务器返回了code字段，使用服务器的错误信息
       if (error.response.data && error.response.data.hasOwnProperty('code')) {
         return {
           success: false,
@@ -136,14 +173,12 @@ request.interceptors.response.use(
           data: error.response.data.data
         }
       }
-
       return {
         success: false,
         message: errorMessage,
         data: null
       }
     } else if (error.request) {
-      // 请求已经成功发起，但没有收到响应
       console.error('网络连接失败，请检查网络设置')
       return {
         success: false,
@@ -151,7 +186,6 @@ request.interceptors.response.use(
         data: null
       }
     } else {
-      // 发送请求时出了点问题
       console.error('请求配置错误:', error.message)
       return {
         success: false,
@@ -161,5 +195,59 @@ request.interceptors.response.use(
     }
   }
 )
+
+// 响应后处理：合并本地数据到服务器响应
+export function postProcessResponse(url, response, params = {}) {
+  if (!isLocalMode() || !response || !response.success) return response
+
+  if ((url === '/posts' || url.startsWith('/posts?')) && response.data?.posts) {
+    const serverPosts = response.data.posts
+    const user = db.getCurrentLocalUser()
+    let localPosts = []
+    if (user) {
+      localPosts = db.getLocalPosts().filter(p => p.status === 0)
+      // 按分类过滤
+      if (params?.category_id) {
+        localPosts = localPosts.filter(p => p.category_id === params.category_id)
+      }
+      // 按类型过滤
+      if (params?.type !== undefined && params?.type !== null) {
+        localPosts = localPosts.filter(p => p.type === params.type)
+      }
+    }
+    const localLikes = user ? db.getLocalLikes().filter(l => l.user_id === user.id) : []
+    const localCollections = user ? db.getLocalCollections().filter(c => c.user_id === user.id) : []
+
+    // 合并本地帖子到列表前面
+    const merged = [...localPosts, ...serverPosts]
+
+    // 应用本地点赞/收藏状态
+    response.data.posts = merged.map(post => {
+      const liked = localLikes.some(l => l.target_type === 1 && l.target_id === post.id)
+      const collected = localCollections.some(c => c.post_id === post.id)
+      return { ...post, liked: post.liked || liked, collected: post.collected || collected }
+    })
+
+    if (response.data.pagination) {
+      response.data.pagination.total = (response.data.pagination.total || 0) + localPosts.length
+    }
+  }
+
+  const detailMatch = url.match(/^\/posts\/(\d+)$/)
+  if (detailMatch && response.data) {
+    const postId = Number(detailMatch[1])
+    if (response.data.comments) {
+      response.data.comments = mergeLocalComments(postId, response.data.comments)
+    }
+  }
+
+  const commentMatch = url.match(/^\/posts\/(\d+)\/comments$/)
+  if (commentMatch && response.data?.comments) {
+    const postId = Number(commentMatch[1])
+    response.data.comments = mergeLocalComments(postId, response.data.comments)
+  }
+
+  return response
+}
 
 export default request

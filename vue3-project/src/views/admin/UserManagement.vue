@@ -57,7 +57,7 @@ const currentBanInfo = ref(null)
 
 const columns = [
   { key: 'id', label: 'ID', sortable: true },
-  { key: 'user_id', label: '小石榴号', type: 'user-link', sortable: false, maxLength: 15 },
+  { key: 'user_id', label: 'UID', type: 'user-link', sortable: false, maxLength: 15 },
   { key: 'nickname', label: '用户昵称', sortable: false },
   { key: 'avatar', label: '头像', type: 'image', sortable: false },
   { key: 'bio', label: '简介', type: 'content', sortable: false },
@@ -113,7 +113,7 @@ const banFormFields = [
 
 // 通用用户表单字段
 const userFormFields = [
-  { key: 'user_id', label: '小石榴号', type: 'text', required: true, placeholder: '请输入小石榴号', maxlength: 15 },
+  { key: 'user_id', label: 'UID', type: 'text', required: true, placeholder: '请输入UID', maxlength: 15 },
   { key: 'nickname', label: '昵称', type: 'text', required: true, placeholder: '请输入昵称', maxlength: 10 },
   { key: 'avatar', label: '头像', type: 'avatar-upload', placeholder: '上传头像' },
   { key: 'avatar', label: '头像URL', type: 'text', placeholder: '请输入头像URL或使用上方上传功能' },
@@ -122,13 +122,12 @@ const userFormFields = [
   { key: 'location', label: '属地', type: 'text', placeholder: '请输入属地' },
   { key: 'gender', label: '性别', type: 'select', options: [{ value: '', label: '请选择' }, { value: '男', label: '男' }, { value: '女', label: '女' }], placeholder: '请选择性别' },
   {
-    key: 'zodiac_sign', label: '星座', type: 'select', options: [
+    key: 'zodiac_sign', label: '命途', type: 'select', options: [
       { value: '', label: '请选择' },
-      { value: '白羊座', label: '白羊座' }, { value: '金牛座', label: '金牛座' }, { value: '双子座', label: '双子座' },
-      { value: '巨蟹座', label: '巨蟹座' }, { value: '狮子座', label: '狮子座' }, { value: '处女座', label: '处女座' },
-      { value: '天秤座', label: '天秤座' }, { value: '天蝎座', label: '天蝎座' }, { value: '射手座', label: '射手座' },
-      { value: '摩羯座', label: '摩羯座' }, { value: '水瓶座', label: '水瓶座' }, { value: '双鱼座', label: '双鱼座' }
-    ], placeholder: '请选择星座'
+      { value: '毁灭', label: '毁灭' }, { value: '巡猎', label: '巡猎' }, { value: '智识', label: '智识' },
+      { value: '同谐', label: '同谐' }, { value: '虚无', label: '虚无' }, { value: '存护', label: '存护' },
+      { value: '丰饶', label: '丰饶' }, { value: '记忆', label: '记忆' }, { value: '欢愉', label: '欢愉' }
+    ], placeholder: '请选择命途'
   },
   {
     key: 'mbti', label: 'MBTI', type: 'mbti-picker', dimensions: [
@@ -359,7 +358,7 @@ const handleBanSubmit = async (formData) => {
 const formFields = userFormFields
 
 const searchFields = [
-  { key: 'user_id', label: '小石榴号', placeholder: '搜索小石榴号' },
+  { key: 'user_id', label: 'UID', placeholder: '搜索UID' },
   { key: 'nickname', label: '昵称', placeholder: '搜索昵称' },
   { key: 'location', label: '属地', placeholder: '搜索属地' },
   {

@@ -1,5 +1,5 @@
 /**
- * 小石榴校园图文社区 - 应用配置文件
+ * 芙芙不服校园图文社区 - 应用配置文件
  * 集中管理所有配置项
  * 
  * @author ZTMYO
@@ -8,10 +8,17 @@
  * @version v1.3.2
  */
 
-const mysql = require('mysql2/promise');
 const path = require('path');
 const crypto = require('crypto');
 require('dotenv').config({ path: path.resolve(__dirname, '..', '.env') });
+
+// 根据 DB_TYPE 选择数据库：sqlite（单容器部署）或 mysql（docker-compose）
+const DB_TYPE = process.env.DB_TYPE || 'mysql';
+let pool;
+if (DB_TYPE === 'sqlite') {
+  const sqlite = require('./sqlite');
+  pool = sqlite.pool;
+}
 
 
 const config = {
@@ -23,7 +30,7 @@ const config = {
 
   // CORS配置
   cors: {
-    origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim()) : ['http://localhost:5173', 'http://localhost:3001']
+    origin: process.env.CORS_ORIGIN === '*' ? true : (process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim()) : ['http://localhost:5173', 'http://localhost:3001'])
   },
 
   // JWT配置
@@ -131,7 +138,7 @@ const config = {
     // 发件人配置
     from: {
       email: process.env.EMAIL_FROM || '',
-      name: process.env.EMAIL_FROM_NAME || '小石榴校园图文社区'
+      name: process.env.EMAIL_FROM_NAME || '芙芙不服校园图文社区'
     }
   },
 
@@ -144,16 +151,17 @@ const config = {
   }
 };
 
-// 数据库连接池配置
-const dbConfig = {
-  ...config.database,
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0
-};
-
-// 创建连接池
-const pool = mysql.createPool(dbConfig);
+// MySQL 连接池（非 sqlite 模式）
+if (DB_TYPE !== 'sqlite') {
+  const mysql = require('mysql2/promise');
+  const dbConfig = {
+    ...config.database,
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0
+  };
+  pool = mysql.createPool(dbConfig);
+}
 
 module.exports = {
   ...config,

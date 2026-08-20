@@ -1,5 +1,5 @@
 /**
- * 小石榴校园图文社区 - Vue3前端应用
+ * 芙芙不服校园图文社区 - Vue3前端应用
  * 
  * @author ZTMYO
  * @github https://github.com/ZTMYO
