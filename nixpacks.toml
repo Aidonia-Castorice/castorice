@@ -1,20 +1,2 @@
 [phases.setup]
-nixPkgs = ["nodejs_20", "npm", "python3", "gcc", "g++", "make"]
-
-[phases.install]
-cmds = [
-  "cd express-project && npm ci",
-  "cd ../vue3-project && npm ci"
-]
-
-[phases.build]
-cmds = [
-  "cd vue3-project && VITE_API_BASE_URL=/api VITE_USE_REAL_API=true npx vite build --mode production",
-  "mkdir -p ../express-project/public",
-  "cp -r dist/* ../express-project/public/",
-  "cd ../express-project && npm prune --production",
-  "mkdir -p data"
-]
-
-[start]
-cmd = "cd express-project && DB_TYPE=sqlite SQLITE_PATH=./data/app.db PORT=3001 NODE_ENV=production JWT_SECRET=fufu_kubeletto_2026_secret CORS_ORIGIN=* node app.js"
+nixPkgs = ["nodejs_20", "python3", "gcc", "g++", "make"]
