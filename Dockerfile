@@ -1,5 +1,5 @@
 # ========== Stage 1: Build frontend ==========
-FROM node:20-alpine AS frontend-build
+FROM node:20-slim AS frontend-build
 WORKDIR /app/vue3-project
 COPY vue3-project/package*.json ./
 RUN npm ci
@@ -11,18 +11,18 @@ ENV VITE_USE_REAL_API=$VITE_USE_REAL_API
 RUN npm run build
 
 # ========== Stage 2: Production ==========
-FROM node:20-alpine
+FROM node:20-slim
 WORKDIR /app
 
-# Install build dependencies for native modules
-RUN apk add --no-cache python3 make g++
+# Install build dependencies for native modules (better-sqlite3 may need rebuild)
+RUN apt-get update && apt-get install -y --no-install-recommends python3 make g++ && rm -rf /var/lib/apt/lists/*
 
 # Copy backend package files and install dependencies
 COPY express-project/package*.json ./
 RUN npm ci --omit=dev 2>/dev/null || npm install --production
 
-# Rebuild better-sqlite3 from source for Alpine compatibility
-RUN npm rebuild better-sqlite3 --build-from-source 2>/dev/null || true
+# Rebuild better-sqlite3 for current platform
+RUN npm rebuild better-sqlite3 2>/dev/null || true
 
 # Copy backend source
 COPY express-project/ ./
@@ -30,7 +30,7 @@ COPY express-project/ ./
 # Copy built frontend
 COPY --from=frontend-build /app/vue3-project/dist ./public
 
-# Create data directory
+# Create data and uploads directories
 RUN mkdir -p /app/data /app/uploads
 
 # Environment
