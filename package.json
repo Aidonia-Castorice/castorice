@@ -4,7 +4,7 @@
   "private": true,
   "description": "芙芙不服 - 校园生活社区平台",
   "scripts": {
-    "postinstall": "cd express-project && npm ci && cd ../vue3-project && npm ci && VITE_API_BASE_URL=/api VITE_USE_REAL_API=true npx vite build --mode production && mkdir -p ../express-project/public && cp -r dist/* ../express-project/public/ && cd ../express-project && mkdir -p data",
+    "postinstall": "cd express-project && npm install && cd ../vue3-project && npm install && VITE_API_BASE_URL=/api VITE_USE_REAL_API=true npx vite build --mode production && mkdir -p ../express-project/public && cp -r dist/* ../express-project/public/ && cd ../express-project && mkdir -p data",
     "start": "cd express-project && DB_TYPE=sqlite SQLITE_PATH=./data/app.db NODE_ENV=production JWT_SECRET=fufu_kubeletto_2026_secret CORS_ORIGIN=* node start.js"
   },
   "engines": {
