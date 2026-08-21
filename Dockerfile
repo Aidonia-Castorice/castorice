@@ -14,14 +14,17 @@ RUN npm run build
 FROM node:20-alpine
 WORKDIR /app
 
-# Install sqlite dependencies
-RUN apk add --no-cache python3 make g++ && \
-    cd /tmp && npm install better-sqlite3 --build-from-source && \
-    cp -r /tmp/node_modules/better-sqlite3 /app/ 2>/dev/null || true
+# Install build dependencies for native modules
+RUN apk add --no-cache python3 make g++
 
-# Copy backend
+# Copy backend package files and install dependencies
 COPY express-project/package*.json ./
 RUN npm ci --omit=dev 2>/dev/null || npm install --production
+
+# Rebuild better-sqlite3 from source for Alpine compatibility
+RUN npm rebuild better-sqlite3 --build-from-source 2>/dev/null || true
+
+# Copy backend source
 COPY express-project/ ./
 
 # Copy built frontend
@@ -32,7 +35,7 @@ RUN mkdir -p /app/data /app/uploads
 
 # Environment
 ENV NODE_ENV=production
-ENV PORT=3001
+ENV PORT=8080
 ENV DB_TYPE=sqlite
 ENV SQLITE_PATH=/app/data/app.db
 ENV EMAIL_ENABLED=false
@@ -40,6 +43,5 @@ ENV IMAGE_UPLOAD_STRATEGY=imagehost
 ENV IMAGEHOST_API_URL=https://api.xinyew.cn/api/360tc
 ENV CORS_ORIGIN=*
 
-EXPOSE 3001
-
+EXPOSE 8080
 CMD ["node", "app.js"]
