@@ -23,6 +23,10 @@ const channelConfig = computed(() => {
     }
     
     categories.value.forEach(category => {
+        // 不覆盖内置的 recommend（推荐算法）和 following（关注）频道
+        if (category.category_title === 'recommend' || category.category_title === 'following') {
+            return
+        }
         // 使用英文标题作为路由参数的key
         config[category.category_title] = {
             category: category.id, // 使用分类ID
