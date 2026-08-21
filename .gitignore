@@ -51,3 +51,4 @@ express-project/data/
 
 # Test files
 .env.test
+express-project/public/

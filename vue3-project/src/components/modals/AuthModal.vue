@@ -671,6 +671,11 @@ onMounted(() => {
   font-weight: 700;
   color: var(--text-color-primary);
   margin: 0 0 8px 0;
+  text-align: center;
+  width: 100%;
+  display: block;
+  line-height: 1.4;
+  letter-spacing: 0;
 }
 
 .auth-subtitle {

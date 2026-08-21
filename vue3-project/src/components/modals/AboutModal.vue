@@ -24,17 +24,11 @@
               芙芙不服校园图文社区是一个面向开发者与学习者的开源示例项目，旨在提供从前端到后端的完整实践范本，帮助大家学习现代 Web 应用的架构设计、工程化与业务实现。
             </p>
           </div>
-          <div class="author-section">
-            <h3>开发者</h3>
-            <a href="https://github.com/ZTMYO" target="_blank" class="author-link">
-              <div class="author-info">
-                <img class="author-avatar" :src="ztmyoUrl" alt="ZTMYO">
-                <div class="author-details">
-                  <p class="author-name">@ZTMYO</p>
-                  <p class="author-desc">全栈开发者</p>
-                </div>
-              </div>
-            </a>
+          <div class="intro-section">
+            <h3>关于本站</h3>
+            <p>
+              芙芙不服校园图文社区是一个基于开源项目构建的图文分享平台，支持图文发布、社交互动、内容探索等核心功能。
+            </p>
           </div>
           <div class="features-section">
             <h3>项目亮点</h3>
@@ -105,7 +99,7 @@
           </div>
 
           <div class="about-footer">
-            <p>&copy; 2025 芙芙不服校园图文社区. Made with ❤️ by @ZTMYO</p>
+            <p>&copy; 2025 芙芙不服校园图文社区</p>
           </div>
         </div>
       </div>
@@ -124,7 +118,6 @@ const { lock, unlock } = useScrollLock()
 
 // 静态资源URL
 const logoUrl = new URL('@/assets/imgs/logo.svg', import.meta.url).href
-const ztmyoUrl = new URL('@/assets/imgs/ztmyo.png', import.meta.url).href
 const liciUrl = new URL('@/assets/imgs/栗次元.ico', import.meta.url).href
 const xiaRouUrl = new URL('@/assets/imgs/夏柔.ico', import.meta.url).href
 const baoLuoUrl = new URL('@/assets/imgs/保罗.ico', import.meta.url).href
