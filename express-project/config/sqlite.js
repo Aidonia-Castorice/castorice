@@ -36,6 +36,13 @@ function transformSql(sql) {
 
   // 注意：DATE_SUB(NOW(), ...) 和 DATE_SUB(CURDATE(), ...) 必须在 NOW()/CURDATE() 单独替换之前处理，
   // 否则 NOW() 会被先替换为 CURRENT_TIMESTAMP，导致 DATE_SUB 正则匹配失败。
+  // TIMESTAMPDIFF(HOUR, a, b) → CAST((julianday(b) - julianday(a)) * 24 AS INTEGER)
+  result = result.replace(/TIMESTAMPDIFF\s*\(\s*HOUR\s*,\s*([^,]+?)\s*,\s*([^)]+?)\s*\)/gi,
+    'CAST((julianday($2) - julianday($1)) * 24 AS INTEGER)');
+  // LEAST(...) → min(...) （SQLite 3.35+ 支持多参数标量 min）
+  result = result.replace(/\bLEAST\s*\(/gi, 'min(');
+  // GREATEST(...) → max(...)
+  result = result.replace(/\bGREATEST\s*\(/gi, 'max(');
 
   // DATE_SUB(NOW(), INTERVAL ? HOUR) → datetime('now', ?)
   result = result.replace(/DATE_SUB\s*\(\s*NOW\s*\(\s*\)\s*,\s*INTERVAL\s+\?\s+HOUR\s*\)/gi,
@@ -298,6 +305,7 @@ function initializeSchema() {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       post_id INTEGER NOT NULL,
       video_url TEXT NOT NULL,
+      cover_url TEXT,
       duration INTEGER,
       thumbnail TEXT,
       created_at TEXT DEFAULT CURRENT_TIMESTAMP,
@@ -452,6 +460,13 @@ function initializeSchema() {
     const cols = db.prepare("PRAGMA table_info(users)").all();
     if (!cols.some(c => c.name === 'is_bot')) {
       db.exec('ALTER TABLE users ADD COLUMN is_bot INTEGER DEFAULT 0');
+    }
+  } catch (e) { /* 列已存在，忽略 */ }
+  // 迁移：为已存在的 post_videos 表添加 cover_url 列
+  try {
+    const cols = db.prepare("PRAGMA table_info(post_videos)").all();
+    if (cols.length > 0 && !cols.some(c => c.name === 'cover_url')) {
+      db.exec('ALTER TABLE post_videos ADD COLUMN cover_url TEXT');
     }
   } catch (e) { /* 列已存在，忽略 */ }
 }
