@@ -30,8 +30,8 @@ COPY express-project/ ./
 # Copy built frontend
 COPY --from=frontend-build /app/vue3-project/dist ./public
 
-# Create data and uploads directories
-RUN mkdir -p /app/data /app/uploads
+# Create data and uploads directories, make start script executable
+RUN mkdir -p /app/data /app/uploads && chmod +x /app/start.sh
 
 # Environment
 ENV NODE_ENV=production
@@ -44,4 +44,4 @@ ENV IMAGEHOST_API_URL=https://api.xinyew.cn/api/360tc
 ENV CORS_ORIGIN=*
 
 EXPOSE 8080
-CMD ["node", "app.js"]
+CMD ["/app/start.sh"]
