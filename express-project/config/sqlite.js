@@ -177,11 +177,56 @@ function transformParams(sql, params) {
   return result;
 }
 
+// 展开数组参数：MySQL 的 IN (?) 接收数组时会自动展开为 IN (?, ?, ...)，better-sqlite3 不会
+function expandArrayParams(sql, params) {
+  if (!params) return { sql, params };
+  const paramArray = Array.isArray(params) ? params : [params];
+  if (!paramArray.some(p => Array.isArray(p))) return { sql, params: paramArray };
+  let result = '';
+  let paramIndex = 0;
+  let inString = false;
+  let stringChar = '';
+  for (let i = 0; i < sql.length; i++) {
+    const char = sql[i];
+    if (inString) {
+      result += char;
+      if (char === stringChar && sql[i - 1] !== '\\') inString = false;
+      continue;
+    }
+    if (char === "'" || char === '"') {
+      inString = true;
+      stringChar = char;
+      result += char;
+      continue;
+    }
+    if (char === '?') {
+      const param = paramArray[paramIndex];
+      if (Array.isArray(param)) {
+        result += param.map(() => '?').join(', ');
+      } else {
+        result += '?';
+      }
+      paramIndex++;
+    } else {
+      result += char;
+    }
+  }
+  const flatParams = [];
+  for (const p of paramArray) {
+    if (Array.isArray(p)) flatParams.push(...p);
+    else flatParams.push(p);
+  }
+  return { sql: result, params: flatParams };
+}
 // 执行 SQL 并返回 Promise<[rows, fields]>
 function execute(sql, params = []) {
   try {
-    const transformedSql = transformSql(sql);
-    const transformedParams = transformParams(sql, params);
+    let transformedSql = transformSql(sql);
+    let transformedParams = transformParams(sql, params);
+    // 展开 IN (?) 数组参数
+    const expanded = expandArrayParams(transformedSql, transformedParams);
+    transformedSql = expanded.sql;
+    transformedParams = expanded.params;
 
     const isSelect = /^\s*(SELECT|WITH|PRAGMA)/i.test(transformedSql);
     const isInsert = /^\s*INSERT/i.test(transformedSql);
