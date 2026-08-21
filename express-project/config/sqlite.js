@@ -37,7 +37,8 @@ function transformSql(sql) {
   // 注意：DATE_SUB(NOW(), ...) 和 DATE_SUB(CURDATE(), ...) 必须在 NOW()/CURDATE() 单独替换之前处理，
   // 否则 NOW() 会被先替换为 CURRENT_TIMESTAMP，导致 DATE_SUB 正则匹配失败。
   // TIMESTAMPDIFF(HOUR, a, b) → CAST((julianday(b) - julianday(a)) * 24 AS INTEGER)
-  result = result.replace(/TIMESTAMPDIFF\s*\(\s*HOUR\s*,\s*([^,]+?)\s*,\s*([^)]+?)\s*\)/gi,
+  // b 可以是 NOW() 或列名；NOW() 含右括号，需特殊匹配
+  result = result.replace(/TIMESTAMPDIFF\s*\(\s*HOUR\s*,\s*([^,]+?)\s*,\s*(NOW\(\)|CURRENT_TIMESTAMP|[^,)]+?)\s*\)/gi,
     'CAST((julianday($2) - julianday($1)) * 24 AS INTEGER)');
   // LEAST(...) → min(...) （SQLite 3.35+ 支持多参数标量 min）
   result = result.replace(/\bLEAST\s*\(/gi, 'min(');
