@@ -14,15 +14,9 @@ RUN npm run build
 FROM node:20-slim
 WORKDIR /app
 
-# Install build dependencies for native modules (better-sqlite3 may need rebuild)
-RUN apt-get update && apt-get install -y --no-install-recommends python3 make g++ && rm -rf /var/lib/apt/lists/*
-
-# Copy backend package files and install dependencies
+# Copy backend package files and install dependencies (sql.js is pure JS, no native build needed)
 COPY express-project/package*.json ./
 RUN npm ci --omit=dev 2>/dev/null || npm install --production
-
-# Rebuild better-sqlite3 for current platform
-RUN npm rebuild better-sqlite3 2>/dev/null || true
 
 # Copy backend source
 COPY express-project/ ./
@@ -30,8 +24,8 @@ COPY express-project/ ./
 # Copy built frontend
 COPY --from=frontend-build /app/vue3-project/dist ./public
 
-# Create data and uploads directories, make start script executable
-RUN mkdir -p /app/data /app/uploads && chmod +x /app/start.sh
+# Create data and uploads directories
+RUN mkdir -p /app/data /app/uploads
 
 # Environment
 ENV NODE_ENV=production
@@ -44,4 +38,4 @@ ENV IMAGEHOST_API_URL=https://api.xinyew.cn/api/360tc
 ENV CORS_ORIGIN=*
 
 EXPOSE 8080
-CMD ["/app/start.sh"]
+CMD ["node", "app.js"]
