@@ -53,6 +53,27 @@ function transformSql(sql) {
   result = result.replace(/DATE_SUB\s*\(\s*CURDATE\s*\(\s*\)\s*,\s*INTERVAL\s+\?\s+DAY\s*\)/gi,
     "date('now', '-' || ? || ' days')");
 
+  // DATE_ADD(NOW(), INTERVAL N DAY) （字面数字）→ datetime('now', '+N days')
+  result = result.replace(/DATE_ADD\s*\(\s*NOW\s*\(\s*\)\s*,\s*INTERVAL\s+(\d+)\s+(DAY|HOUR|MINUTE|SECOND)\s*\)/gi,
+    (match, num, unit) => {
+      const units = { DAY: 'days', HOUR: 'hours', MINUTE: 'minutes', SECOND: 'seconds' };
+      return `datetime('now', '+${num} ${units[unit.toUpperCase()] || 'days'}')`;
+    });
+
+  // DATE_ADD(NOW(), INTERVAL ? DAY) （参数化）→ datetime('now', '+' || ? || ' days')
+  result = result.replace(/DATE_ADD\s*\(\s*NOW\s*\(\s*\)\s*,\s*INTERVAL\s+\?\s+(DAY|HOUR|MINUTE|SECOND)\s*\)/gi,
+    (match, unit) => {
+      const units = { DAY: 'days', HOUR: 'hours', MINUTE: 'minutes', SECOND: 'seconds' };
+      return `datetime('now', '+' || ? || ' ${units[unit.toUpperCase()] || 'days'}')`;
+    });
+
+  // DATE_SUB(NOW(), INTERVAL N DAY) （字面数字）→ datetime('now', '-N days')
+  result = result.replace(/DATE_SUB\s*\(\s*NOW\s*\(\s*\)\s*,\s*INTERVAL\s+(\d+)\s+(DAY|HOUR|MINUTE|SECOND)\s*\)/gi,
+    (match, num, unit) => {
+      const units = { DAY: 'days', HOUR: 'hours', MINUTE: 'minutes', SECOND: 'seconds' };
+      return `datetime('now', '-${num} ${units[unit.toUpperCase()] || 'days'}')`;
+    });
+
   // NOW() → CURRENT_TIMESTAMP
   result = result.replace(/\bNOW\(\)/gi, 'CURRENT_TIMESTAMP');
 
@@ -219,6 +240,7 @@ function initializeSchema() {
       major TEXT DEFAULT '',
       interests TEXT DEFAULT '[]',
       verified INTEGER DEFAULT 0,
+      is_bot INTEGER DEFAULT 0,
       created_at TEXT DEFAULT CURRENT_TIMESTAMP,
       updated_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
@@ -425,6 +447,13 @@ function initializeSchema() {
   `;
 
   db.exec(schema);
+  // 迁移：为已存在的 users 表添加 is_bot 列（SQLite 不支持 IF NOT EXISTS for ADD COLUMN）
+  try {
+    const cols = db.prepare("PRAGMA table_info(users)").all();
+    if (!cols.some(c => c.name === 'is_bot')) {
+      db.exec('ALTER TABLE users ADD COLUMN is_bot INTEGER DEFAULT 0');
+    }
+  } catch (e) { /* 列已存在，忽略 */ }
 }
 
 // 定义 REGEXP 函数

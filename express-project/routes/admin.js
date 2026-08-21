@@ -3180,4 +3180,211 @@ router.get('/categories', adminAuth, async (req, res) => {
   }
 })
 
+// ==================== API 虚拟账号管理 ====================
+const { generatePosts, getAllBotUserIds, DEFAULT_AVATAR } = require('../utils/startupSeed');
+
+// 获取 API 虚拟账号列表
+router.get('/bot-users', adminAuth, async (req, res) => {
+  try {
+    const [users] = await pool.execute(
+      `SELECT id, user_id, nickname, avatar, bio, location, is_active, created_at,
+              (SELECT COUNT(*) FROM posts WHERE posts.user_id = users.id AND posts.status = 0) as post_count
+       FROM users WHERE is_bot = 1
+       ORDER BY id ASC`
+    );
+    res.json({
+      code: RESPONSE_CODES.SUCCESS,
+      message: 'success',
+      data: users
+    });
+  } catch (error) {
+    console.error('获取API账号列表失败:', error);
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+      code: RESPONSE_CODES.ERROR,
+      message: '获取API账号列表失败'
+    });
+  }
+});
+
+// 创建 API 虚拟账号
+router.post('/bot-users', adminAuth, async (req, res) => {
+  try {
+    const { nickname, bio, location, avatar } = req.body;
+    if (!nickname || !nickname.trim()) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({
+        code: RESPONSE_CODES.VALIDATION_ERROR,
+        message: '昵称不能为空'
+      });
+    }
+    const trimmedNick = nickname.trim();
+    // 检查昵称是否已存在
+    const [existing] = await pool.execute(
+      'SELECT id FROM users WHERE user_id = ? OR nickname = ?',
+      [trimmedNick, trimmedNick]
+    );
+    if (existing.length > 0) {
+      return res.status(HTTP_STATUS.CONFLICT).json({
+        code: RESPONSE_CODES.CONFLICT,
+        message: '该昵称已被使用'
+      });
+    }
+    const randomPass = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+    const [result] = await pool.execute(
+      `INSERT INTO users (user_id, password, nickname, avatar, bio, location, is_active, email, verified, is_bot)
+       VALUES (?, SHA2(?, 256), ?, ?, ?, ?, 1, '', 0, 1)`,
+      [trimmedNick, randomPass, trimmedNick, (avatar || '').trim() || DEFAULT_AVATAR, (bio || '').trim(), (location || '').trim()]
+    );
+    res.json({
+      code: RESPONSE_CODES.SUCCESS,
+      message: 'API账号创建成功',
+      data: { id: result.insertId }
+    });
+  } catch (error) {
+    console.error('创建API账号失败:', error);
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+      code: RESPONSE_CODES.ERROR,
+      message: '创建API账号失败'
+    });
+  }
+});
+
+// 更新 API 虚拟账号
+router.put('/bot-users/:id', adminAuth, async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const { nickname, bio, location, avatar, is_active } = req.body;
+
+    const [userRows] = await pool.execute('SELECT id, user_id FROM users WHERE id = ? AND is_bot = 1', [String(userId)]);
+    if (userRows.length === 0) {
+      return res.status(HTTP_STATUS.NOT_FOUND).json({
+        code: RESPONSE_CODES.NOT_FOUND,
+        message: 'API账号不存在'
+      });
+    }
+
+    const updates = [];
+    const params = [];
+
+    if (nickname !== undefined && nickname.trim()) {
+      const trimmedNick = nickname.trim();
+      // 检查昵称是否与其他用户冲突
+      const [conflict] = await pool.execute(
+        'SELECT id FROM users WHERE (user_id = ? OR nickname = ?) AND id != ?',
+        [trimmedNick, trimmedNick, String(userId)]
+      );
+      if (conflict.length > 0) {
+        return res.status(HTTP_STATUS.CONFLICT).json({
+          code: RESPONSE_CODES.CONFLICT,
+          message: '该昵称已被使用'
+        });
+      }
+      updates.push('user_id = ?', 'nickname = ?');
+      params.push(trimmedNick, trimmedNick);
+    }
+    if (bio !== undefined) { updates.push('bio = ?'); params.push(bio); }
+    if (location !== undefined) { updates.push('location = ?'); params.push(location); }
+    if (avatar !== undefined) { updates.push('avatar = ?'); params.push(avatar || DEFAULT_AVATAR); }
+    if (is_active !== undefined) { updates.push('is_active = ?'); params.push(is_active ? 1 : 0); }
+
+    if (updates.length === 0) {
+      return res.json({ code: RESPONSE_CODES.SUCCESS, message: '没有需要更新的字段' });
+    }
+
+    params.push(String(userId));
+    await pool.execute(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`, params);
+    res.json({ code: RESPONSE_CODES.SUCCESS, message: '更新成功' });
+  } catch (error) {
+    console.error('更新API账号失败:', error);
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+      code: RESPONSE_CODES.ERROR,
+      message: '更新API账号失败'
+    });
+  }
+});
+
+// 删除 API 虚拟账号（同时删除其帖子等关联数据）
+router.delete('/bot-users/:id', adminAuth, async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const [userRows] = await pool.execute('SELECT id FROM users WHERE id = ? AND is_bot = 1', [String(userId)]);
+    if (userRows.length === 0) {
+      return res.status(HTTP_STATUS.NOT_FOUND).json({
+        code: RESPONSE_CODES.NOT_FOUND,
+        message: 'API账号不存在'
+      });
+    }
+    await pool.execute('DELETE FROM users WHERE id = ?', [String(userId)]);
+    res.json({ code: RESPONSE_CODES.SUCCESS, message: '删除成功' });
+  } catch (error) {
+    console.error('删除API账号失败:', error);
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+      code: RESPONSE_CODES.ERROR,
+      message: '删除API账号失败'
+    });
+  }
+});
+
+// 从图库 API 生成新帖子
+router.post('/bot-users/generate-posts', adminAuth, async (req, res) => {
+  try {
+    const { count } = req.body; // 期望获取的图片数量
+    const targetImages = Math.min(Math.max(parseInt(count) || 120, 30), 300);
+
+    // 获取站主 ID
+    const [ownerRows] = await pool.execute(
+      "SELECT id FROM users WHERE user_id = '芙芙不服' LIMIT 1"
+    );
+    const ownerId = ownerRows.length > 0 ? ownerRows[0].id : null;
+
+    const botUserIds = await getAllBotUserIds();
+    if (botUserIds.length === 0) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({
+        code: RESPONSE_CODES.ERROR,
+        message: '没有可用的API账号，请先创建'
+      });
+    }
+
+    const created = await generatePosts(ownerId, botUserIds, {
+      welcomePost: false,
+      targetImages,
+      includeLocal: false
+    });
+
+    res.json({
+      code: RESPONSE_CODES.SUCCESS,
+      message: `成功生成 ${created} 篇新帖子`,
+      data: { created_count: created }
+    });
+  } catch (error) {
+    console.error('生成帖子失败:', error);
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+      code: RESPONSE_CODES.ERROR,
+      message: '生成帖子失败: ' + error.message
+    });
+  }
+});
+
+// 获取内容统计
+router.get('/bot-stats', adminAuth, async (req, res) => {
+  try {
+    const [botCount] = await pool.execute('SELECT COUNT(*) as count FROM users WHERE is_bot = 1');
+    const [postCount] = await pool.execute('SELECT COUNT(*) as count FROM posts WHERE status = 0');
+    const [imageCount] = await pool.execute('SELECT COUNT(*) as count FROM post_images');
+    res.json({
+      code: RESPONSE_CODES.SUCCESS,
+      data: {
+        bot_count: botCount[0].count,
+        post_count: postCount[0].count,
+        image_count: imageCount[0].count
+      }
+    });
+  } catch (error) {
+    console.error('获取统计失败:', error);
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+      code: RESPONSE_CODES.ERROR,
+      message: '获取统计失败'
+    });
+  }
+});
+
 module.exports = router

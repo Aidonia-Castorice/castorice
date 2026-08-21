@@ -33,6 +33,7 @@ import AdminSessionManagement from '@/views/admin/AdminSessionManagement.vue'
 import AdminManagement from '@/views/admin/AdminManagement.vue'
 import AuditManagement from '@/views/admin/AuditManagement.vue'
 import PostAudit from '@/views/admin/PostAudit.vue'
+import BotManagement from '@/views/admin/BotManagement.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -196,6 +197,11 @@ const router = createRouter({
           path: 'users',
           name: 'admin_users',
           component: UserManagement
+        },
+        {
+          path: 'bot-users',
+          name: 'admin_bot_users',
+          component: BotManagement
         },
         {
           path: 'post-audit',
