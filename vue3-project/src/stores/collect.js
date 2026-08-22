@@ -63,7 +63,8 @@ export const useCollectStore = defineStore('collect', () => {
   const initPostsCollectStates = (posts) => {
 
     posts.forEach(post => {
-      initPostCollectState(post.id, post.collected || false, post.collectCount || 0)
+      const count = post.collect_count !== undefined ? post.collect_count : (post.collectCount || 0)
+      initPostCollectState(post.id, post.collected || false, count)
     })
   }
 

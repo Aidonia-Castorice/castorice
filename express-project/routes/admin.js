@@ -2017,6 +2017,28 @@ const usersCrudConfig = {
     return { isValid: true }
   },
 
+  // 删除前保护：禁止删除主账号
+  beforeDelete: async (id) => {
+    const [userRows] = await pool.execute('SELECT user_id FROM users WHERE id = ?', [String(id)])
+    if (userRows.length > 0 && userRows[0].user_id === '小蝶书') {
+      return { isValid: false, message: '不能删除主账号', code: 403 }
+    }
+    return { isValid: true }
+  },
+  // 批量删除前保护：过滤掉主账号
+  beforeDeleteMany: async (ids) => {
+    const placeholders = ids.map(() => '?').join(',')
+    const [userRows] = await pool.execute(
+      `SELECT id, user_id FROM users WHERE id IN (${placeholders})`,
+      ids.map(id => String(id))
+    )
+    const ownerIds = userRows.filter(u => u.user_id === '小蝶书').map(u => u.id)
+    if (ownerIds.length > 0) {
+      return { isValid: false, message: '不能删除主账号', code: 403 }
+    }
+    return { isValid: true }
+  },
+
   // 自定义查询，关联用户封禁状态
   customQueries: {
     getList: async (req) => {

@@ -61,7 +61,8 @@ export const useLikeStore = defineStore('like', () => {
   const initPostsLikeStates = (posts) => {
 
     posts.forEach(post => {
-      initPostLikeState(post.id, post.liked || false, post.likeCount || 0)
+      const count = post.like_count !== undefined ? post.like_count : (post.likeCount || 0)
+      initPostLikeState(post.id, post.liked || false, count)
     })
   }
 
