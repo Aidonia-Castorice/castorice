@@ -105,6 +105,11 @@ const restoreThemeColor = () => {
 onMounted(() => {
   userStore.initUserInfo()
   restoreThemeColor()
+  // 预加载关键图片，实现无感显示
+  ;[logoUrl, placeholderUrl, defaultAvatarUrl].forEach(src => {
+    const img = new Image()
+    img.src = src
+  })
 })
 </script>
 

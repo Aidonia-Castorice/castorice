@@ -675,6 +675,7 @@ const loadImageDirectly = (imgElement, src) => {
         imgElement.alt = '图片加载超时'
         imgElement.style.opacity = '1'
         imgElement.style.visibility = 'visible'
+        if (!isAvatar) imgElement.classList.add('error-placeholder')
         imgElement.dispatchEvent(new Event('load'))
     }, 5000)
 
@@ -696,6 +697,7 @@ const loadImageDirectly = (imgElement, src) => {
         imgElement.alt = '图片加载失败'
         imgElement.style.opacity = '1'
         imgElement.style.visibility = 'visible'
+        if (!isAvatar) imgElement.classList.add('error-placeholder')
         imgElement.dispatchEvent(new Event('load'))
     }
 
@@ -1115,6 +1117,15 @@ function handleImageError(event) {
 
 .content-img img:hover {
     filter: brightness(0.7);
+}
+
+/* 图片加载失败占位图样式：保持400x562比例，居中完整显示 */
+.content-img img.error-placeholder {
+    object-fit: contain;
+    background: transparent;
+    aspect-ratio: 400 / 562;
+    width: 100%;
+    height: auto;
 }
 
 /* 懒加载图片样式 */
