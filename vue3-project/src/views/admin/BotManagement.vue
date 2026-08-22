@@ -199,8 +199,7 @@ const generateCount = ref(120)
 const generateResult = ref('')
 
 const presetAvatars = [
-  '/default-avatar.png',
-  '/default-avatar.png',
+  '/bot-avatars/fufu_avatar_1.jpg',
   '/bot-avatars/fufu_avatar_2.jpg',
   '/bot-avatars/fufu_avatar_3.jpg',
   '/bot-avatars/fufu_avatar_4.jpg',
