@@ -37,25 +37,46 @@ const filesRoutes = require('./routes/files');
 const app = express();
 app.set('trust proxy', 1);
 
+// 主账号频率限制豁免：主账号"小蝶书"不受请求频率限制
+const skipOwnerRateLimit = (req) => {
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.substring(7);
+    try {
+      const jwt = require('jsonwebtoken');
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'xiaodieshu-jwt-secret-2024');
+      if (decoded.userId === '小蝶书' || decoded.user_id === '小蝶书' || decoded.uid === '小蝶书') {
+        return true;
+      }
+    } catch (e) {
+      // token无效，不跳过
+    }
+  }
+  return false;
+};
+
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 500,
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: false,
+  skip: skipOwnerRateLimit
 });
 
 const authLimiter = rateLimit({
   windowMs: 5 * 60 * 1000,
   max: 20,
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: false,
+  skip: skipOwnerRateLimit
 });
 
 const uploadLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 60,
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: false,
+  skip: skipOwnerRateLimit
 });
 
 // 中间件配置
