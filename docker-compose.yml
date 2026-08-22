@@ -84,7 +84,7 @@ services:
       args:
         VITE_API_BASE_URL: /api
         VITE_USE_REAL_API: 'true'
-        VITE_APP_TITLE: 芙芙不服
+        VITE_APP_TITLE: 小蝶书
     container_name: xiaoshiliu-frontend
     restart: unless-stopped
     environment:
