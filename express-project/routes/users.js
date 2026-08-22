@@ -1354,6 +1354,11 @@ router.delete('/:id', authenticateToken, async (req, res) => {
     }
     const targetUserId = userRows[0].id;
 
+    // 主账号保护：不得注销主账号
+    if (userIdParam === '小蝶书' || targetUserId === 1) {
+      return res.status(HTTP_STATUS.FORBIDDEN).json({ code: RESPONSE_CODES.FORBIDDEN, message: '无法注销主账号' });
+    }
+
     // 检查是否是用户本人
     if (currentUserId !== targetUserId) {
       return res.status(HTTP_STATUS.FORBIDDEN).json({ code: RESPONSE_CODES.FORBIDDEN, message: '只能删除自己的账号' });
