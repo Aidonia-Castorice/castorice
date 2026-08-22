@@ -63,8 +63,7 @@ function transformSql(sql) {
   result = result.replace(/UNIX_TIMESTAMP\s*\(\s*(\w+)\s*\)/gi, "EXTRACT(EPOCH FROM $1)::INTEGER");
 
   // INSERT IGNORE INTO -> INSERT INTO ... ON CONFLICT DO NOTHING
-  // 这个比较复杂，需要特殊处理
-  result = result.replace(/INSERT\s+IGNORE\s+INTO/gi, 'INSERT INTO');
+  // 这个比较复杂，需要特殊处理 - 在 execute 中处理
 
   // LEAST/GREATEST -> LEAST/GREATEST (PostgreSQL 支持)
 
@@ -187,14 +186,24 @@ async function execute(sql, params = []) {
 
   try {
     let transformedSql = transformSql(sql);
+
+    // 处理 INSERT IGNORE INTO -> INSERT INTO ... ON CONFLICT DO NOTHING
+    const isInsertIgnore = /^\s*INSERT\s+IGNORE\s+INTO/i.test(transformedSql);
+    if (isInsertIgnore) {
+      transformedSql = transformedSql.replace(/INSERT\s+IGNORE\s+INTO/i, 'INSERT INTO');
+      transformedSql = transformedSql.trim().replace(/;?\s*$/, ' ON CONFLICT DO NOTHING');
+    }
+
     const { sql: pgSql, params: pgParams } = convertParams(transformedSql, params);
 
     const isSelect = /^\s*(SELECT|WITH|PRAGMA|SHOW|EXPLAIN)/i.test(pgSql);
     const isInsert = /^\s*INSERT/i.test(pgSql);
+    // 没有 id 列的表（联合主键表）
+    const isNoIdTable = /INSERT\s+INTO\s+post_tags/i.test(pgSql);
 
-    // 对于 INSERT，添加 RETURNING id 以获取 insertId
+    // 对于 INSERT，添加 RETURNING id 以获取 insertId（除非是 INSERT IGNORE 或没有 id 列的表）
     let finalSql = pgSql;
-    if (isInsert && !/RETURNING/i.test(pgSql)) {
+    if (isInsert && !/RETURNING/i.test(pgSql) && !isInsertIgnore && !isNoIdTable) {
       finalSql = pgSql + ' RETURNING id';
     }
 
@@ -203,13 +212,13 @@ async function execute(sql, params = []) {
     if (isSelect) {
       return [result.rows, result.fields || []];
     } else if (isInsert) {
-      const insertId = result.rows.length > 0 ? result.rows[0].id : 0;
+      const insertId = result.rows.length > 0 && result.rows[0].id ? result.rows[0].id : 0;
       return [{ insertId, affectedRows: result.rowCount }, []];
     } else {
       return [{ affectedRows: result.rowCount, insertId: 0 }, []];
     }
   } catch (err) {
-    if (err.message && (err.message.includes('already exists') || err.message.includes('duplicate key') || err.message.includes('UNIQUE constraint'))) {
+    if (err.message && (err.message.includes('already exists') || err.message.includes('duplicate key') || err.message.includes('UNIQUE constraint') || err.message.includes('ON CONFLICT'))) {
       return [{ affectedRows: 0, insertId: 0 }, []];
     }
     console.error('[pg] SQL Error:', err.message);
