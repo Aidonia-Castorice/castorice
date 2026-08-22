@@ -35,6 +35,7 @@ const categoriesRoutes = require('./routes/categories');
 const filesRoutes = require('./routes/files');
 
 const app = express();
+app.set('trust proxy', 1);
 
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,

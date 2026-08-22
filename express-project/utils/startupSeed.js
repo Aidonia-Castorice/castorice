@@ -294,11 +294,13 @@ async function getAllBotUserIds() {
 // ========== 灌装示例帖子（动态数量） ==========
 async function seedSamplePosts(ownerId, botUserIds) {
   const [countResult] = await pool.execute('SELECT COUNT(*) as total FROM posts WHERE status = 0');
-  if (countResult[0].total > 0) {
+  const minPosts = 20;
+  if (countResult[0].total >= minPosts) {
     console.log(`  已有 ${countResult[0].total} 篇帖子，跳过灌装`);
     return;
   }
-  await generatePosts(ownerId, botUserIds, { welcomePost: true });
+  console.log(`  当前 ${countResult[0].total} 篇帖子，开始灌装至 ${minPosts} 篇`);
+  await generatePosts(ownerId, botUserIds, { welcomePost: countResult[0].total === 0 });
 }
 
 /**
