@@ -409,7 +409,7 @@ async function initializeSchema() {
     );
 
     CREATE TABLE IF NOT EXISTS user_sessions (
-      id TEXT PRIMARY KEY,
+      id SERIAL PRIMARY KEY,
       user_id INTEGER NOT NULL,
       token TEXT NOT NULL,
       refresh_token TEXT,
@@ -421,7 +421,7 @@ async function initializeSchema() {
     );
 
     CREATE TABLE IF NOT EXISTS admin_sessions (
-      id TEXT PRIMARY KEY,
+      id SERIAL PRIMARY KEY,
       admin_id INTEGER NOT NULL,
       token TEXT NOT NULL,
       refresh_token TEXT,
