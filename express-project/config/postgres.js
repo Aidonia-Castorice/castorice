@@ -122,14 +122,7 @@ function convertParams(sql, params) {
   let paramIndex = 0;
   let pgIndex = 1;
 
-  // 展开数组参数
-  const flatParams = [];
-  for (const p of paramArray) {
-    if (Array.isArray(p)) flatParams.push(...p);
-    else flatParams.push(p);
-  }
-
-  // 替换 ? 为 $n，同时处理数组展开和 SHA2 标记
+  // 替换 ? 为 $n，同时处理 IN (?) 数组展开和 SHA2 标记
   let inString = false;
   let stringChar = '';
   let output = '';
@@ -154,7 +147,7 @@ function convertParams(sql, params) {
       // 检查是否是 SHA2_MARKER(?)
       if (output.endsWith('SHA2_MARKER(')) {
         // SHA2 参数
-        const p = flatParams[paramIndex];
+        const p = paramArray[paramIndex];
         const hash = crypto.createHash('sha256').update(String(p)).digest('hex');
         output = output.slice(0, -'SHA2_MARKER('.length) + `'${hash}'`;
         // 跳过后面的 )
@@ -162,10 +155,22 @@ function convertParams(sql, params) {
         while (j < resultSql.length && resultSql[j] !== ')') j++;
         i = j; // 跳过 )
         paramIndex++;
+      } else if (output.match(/IN\s*\(\s*$/i) && Array.isArray(paramArray[paramIndex])) {
+        // 处理 IN (?) 数组展开：MySQL 风格，PostgreSQL 需要展开为多个占位符
+        const arr = paramArray[paramIndex];
+        if (arr.length === 0) {
+          // 空数组，使用不可能的值
+          output += 'NULL';
+        } else {
+          const placeholders = arr.map(() => `$${pgIndex++}`).join(', ');
+          output += placeholders;
+          resultParams.push(...arr);
+        }
+        paramIndex++;
       } else {
         // 普通参数
         output += `$${pgIndex}`;
-        resultParams.push(flatParams[paramIndex]);
+        resultParams.push(paramArray[paramIndex]);
         pgIndex++;
         paramIndex++;
       }
@@ -173,9 +178,6 @@ function convertParams(sql, params) {
       output += char;
     }
   }
-
-  // 处理 LIMIT ?, ? 顺序问题：MySQL 是 LIMIT offset, count，PostgreSQL 是 LIMIT count OFFSET offset
-  // 这个比较复杂，暂时不处理，假设代码中使用的是 LIMIT ? OFFSET ? 格式
 
   return { sql: output, params: resultParams };
 }
