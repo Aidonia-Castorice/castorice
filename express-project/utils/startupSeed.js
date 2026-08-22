@@ -18,7 +18,6 @@ const DEFAULT_AVATAR = '/default-avatar.png';
 
 // 分类定义
 const CATEGORIES = [
-  { name: '推荐', category_title: 'recommend' },
   { name: '学习', category_title: 'study' },
   { name: '校园', category_title: 'campus' },
   { name: '情感', category_title: 'emotion' },

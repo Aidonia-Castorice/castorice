@@ -14,7 +14,9 @@ export const loadChannelsFromAPI = async () => {
   try {
     const response = await getCategories()
     if (response.success !== false && response.data) {
-      const categoryChannels = response.data.map(category => ({
+      const categoryChannels = response.data
+        .filter(category => category.category_title !== 'recommend' && category.category_title !== 'following')
+        .map(category => ({
         id: category.id,
         label: category.name,
         path: `/${category.category_title}` // 使用英文标题作为路径
