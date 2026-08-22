@@ -1,5 +1,5 @@
 /**
- * 芙芙不服校园图文社区 - Express后端服务
+ * 小蝶书校园图文社区 - Express后端服务
  * 
  * @author ZTMYO
  * @github https://github.com/ZTMYO

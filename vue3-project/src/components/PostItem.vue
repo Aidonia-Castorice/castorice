@@ -70,7 +70,7 @@
 
 <script setup>
 import SvgIcon from './SvgIcon.vue'
-import defaultPlaceholder from '@/assets/imgs/未加载.png'
+import defaultPlaceholder from '@/assets/imgs/image-placeholder.png'
 
 // Props定义
 const props = defineProps({

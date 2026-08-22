@@ -13,7 +13,7 @@ import { useCollectStore } from '@/stores/collect.js'
 import { useAuthStore } from '@/stores/auth'
 import { getPostList } from '@/api/posts.js'
 import defaultAvatar from '@/assets/imgs/avatar.png'
-import defaultPlaceholder from '@/assets/imgs/未加载.png'
+import defaultPlaceholder from '@/assets/imgs/image-placeholder.png'
 import { stuckItemManager } from '@/directives/index.js'
 
 const props = defineProps({

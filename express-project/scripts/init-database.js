@@ -529,7 +529,7 @@ class DatabaseInitializer {
 
   async run() {
     try {
-      console.log('=== 芙芙不服图文社区数据库初始化 ===\n');
+      console.log('=== 小蝶书图文社区数据库初始化 ===\n');
 
       // 创建数据库
       await this.createDatabase();

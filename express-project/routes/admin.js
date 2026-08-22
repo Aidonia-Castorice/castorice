@@ -3332,7 +3332,7 @@ router.post('/bot-users/generate-posts', adminAuth, async (req, res) => {
 
     // 获取站主 ID
     const [ownerRows] = await pool.execute(
-      "SELECT id FROM users WHERE user_id = '芙芙不服' LIMIT 1"
+      "SELECT id FROM users WHERE user_id = '小蝶书' LIMIT 1"
     );
     const ownerId = ownerRows.length > 0 ? ownerRows[0].id : null;
 

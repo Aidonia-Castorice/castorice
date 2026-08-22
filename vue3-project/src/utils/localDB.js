@@ -381,10 +381,14 @@ export function setLocalMode(enabled) {
 }
 
 // 站主UID常量
-export const SITE_OWNER_UID = '芙芙不服'
-export const SITE_OWNER_PASSWORD = '20099yan'
+export const SITE_OWNER_UID = '小蝶书'
 
-// 判断是否为站主登录凭据
+// 判断是否为站主UID（密码由服务器验证，不硬编码）
+export function isSiteOwnerUid(userId) {
+  return userId === SITE_OWNER_UID
+}
+
+// 兼容旧调用：判断是否为站主登录凭据（仅检查UID，密码由服务器验证）
 export function isSiteOwnerCredentials(userId, password) {
-  return userId === SITE_OWNER_UID && password === SITE_OWNER_PASSWORD
+  return userId === SITE_OWNER_UID
 }

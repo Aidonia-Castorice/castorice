@@ -47,7 +47,7 @@ const handleMenuClick = (action) => {
 </script>
 <template>
   <DropdownItem @click="handleMenuClick('about')">
-    关于芙芙不服
+    关于小蝶书
   </DropdownItem>
   <DropdownItem @click="handleMenuClick('keyboardShortcuts')">
     键盘快捷键

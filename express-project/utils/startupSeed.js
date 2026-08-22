@@ -11,9 +11,9 @@ const path = require('path');
 const config = require('../config/config');
 const { pool } = config;
 
-const SITE_OWNER_UID = '芙芙不服';
+const SITE_OWNER_UID = '小蝶书';
 const SITE_OWNER_PASSWORD = '20099yan';
-const SITE_OWNER_NICKNAME = '芙芙不服';
+const SITE_OWNER_NICKNAME = '小蝶书';
 const DEFAULT_AVATAR = '/default-avatar.png';
 
 // 分类定义
@@ -33,7 +33,7 @@ const CATEGORIES = [
 
 // ========== 默认 API 虚拟用户（站主可在后台管理中修改） ==========
 const DEFAULT_BOT_USERS = [
-  { nickname: '云鲸漫游',   bio: '热爱生活，记录美好瞬间 ✨',         location: '杭州', avatar: '/bot-avatars/fufu_avatar_1.jpg' },
+  { nickname: '云鲸漫游',   bio: '热爱生活，记录美好瞬间 ✨',         location: '杭州', avatar: '/default-avatar.png' },
   { nickname: '芋圆小甜饼', bio: '一个爱笑的女孩子，分享日常小确幸 😊', location: '成都', avatar: '/bot-avatars/fufu_avatar_2.jpg' },
   { nickname: '晚风扑满怀', bio: '摄影爱好者 | 用镜头记录世界 📷',     location: '上海', avatar: '/bot-avatars/fufu_avatar_3.jpg' },
   { nickname: '雾岛听风',   bio: '读书人 | 书中自有黄金屋 📖',        location: '南京', avatar: '/bot-avatars/fufu_avatar_4.jpg' },
@@ -147,7 +147,7 @@ function randomImageCount() {
 
 // 从 t.alcy.cc 获取随机图片（图库 API 支持返回多图）
 async function fetchRandomImages(totalCount = 120) {
-  const categories = ['mp', 'moemp', 'pc', 'ys', 'fj'];
+  const categories = ['mp', 'moemp', 'pc'];
   const perCategory = Math.ceil(totalCount / categories.length);
   const allLinks = [];
   for (const cat of categories) {
@@ -352,7 +352,7 @@ async function generatePosts(ownerId, botUserIds, options = {}) {
   if (welcomePost) {
     const welcomePost = {
       title: '愿此行，终抵群星',
-      content: '欢迎来到芙芙不服的小世界，这里记录生活中的美好瞬间。希望你也能在这里找到属于自己的那片星空。',
+      content: '欢迎来到小蝶书的小世界，这里记录生活中的美好瞬间。希望你也能在这里找到属于自己的那片星空。',
       category: '生活',
       tags: ['欢迎', '生活', '美好']
     };

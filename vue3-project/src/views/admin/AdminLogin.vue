@@ -4,7 +4,7 @@
       <div class="login-card">
 
         <div class="login-header">
-          <h1 class="login-title">芙芙不服管理后台</h1>
+          <h1 class="login-title">小蝶书管理后台</h1>
         </div>
 
 

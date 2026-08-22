@@ -129,5 +129,5 @@ export function getImageDimensions(imageData, maxWidth = null, maxHeight = null)
  * @returns {string} 备用图片 URL
  */
 export function generateFallbackImageUrl(width = 400, height = 300, text = '图片', bgColor = 'CCCCCC') {
-  return new URL('@/assets/imgs/未加载.png', import.meta.url).href
+  return new URL('@/assets/imgs/image-placeholder.png', import.meta.url).href
 }

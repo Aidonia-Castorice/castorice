@@ -19,7 +19,7 @@
 
 <script setup>
 import { computed } from 'vue'
-import defaultPlaceholder from '@/assets/imgs/未加载.png'
+import defaultPlaceholder from '@/assets/imgs/image-placeholder.png'
 
 const props = defineProps({
   content: {

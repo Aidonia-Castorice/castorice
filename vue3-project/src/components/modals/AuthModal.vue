@@ -8,7 +8,7 @@
 
       <div class="auth-content">
         <div class="auth-header">
-          <h2 class="auth-title">{{ isLoginMode ? '爷' : '注册芙芙不服' }}</h2>
+          <h2 class="auth-title">{{ isLoginMode ? '爷' : '注册小蝶书' }}</h2>
           <p class="auth-subtitle">{{ isLoginMode ? '欢迎回家！' : '愿此行，终抵群星' }}</p>
         </div>
 

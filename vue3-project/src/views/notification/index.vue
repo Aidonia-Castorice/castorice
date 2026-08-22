@@ -26,7 +26,7 @@ import { useCommentStore } from '@/stores/comment'
 import { formatTime } from '@/utils/timeFormat'
 import { sanitizeContent } from '@/utils/contentSecurity'
 import avatarPlaceholder from '@/assets/imgs/avatar.png'
-import imagePlaceholder from '@/assets/imgs/未加载.png'
+import imagePlaceholder from '@/assets/imgs/image-placeholder.png'
 
 
 // Store实例

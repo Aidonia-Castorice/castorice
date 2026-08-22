@@ -175,12 +175,12 @@ onUnmounted(() => {
         <div class="header-container">
             <template v-if="displaySearch">
                 <div v-if="isLargeScreen" class="logo" @click="router.push('/')">
-                    <img :src="logoUrl" alt="芙芙不服" />
+                    <img :src="logoUrl" alt="小蝶书" />
                 </div>
                 <div class="search-row" :class="{ 'large-screen': isLargeScreen, 'small-screen': !isLargeScreen }">
                     <div class="search-bar-container">
                         <div class="search-bar">
-                            <input v-model="searchText" type="text" placeholder="搜索芙芙不服" @keypress="handleKeyPress"
+                            <input v-model="searchText" type="text" placeholder="搜索小蝶书" @keypress="handleKeyPress"
                                 @focus="handleSearchFocus" @blur="handleSearchBlur" />
                             <div class="input-controls">
                                 <div class="clear-btn" @click="clearInput"
@@ -215,7 +215,7 @@ onUnmounted(() => {
 
             <template v-else>
                 <div class="logo" @click="router.push('/')">
-                    <img :src="logoUrl" alt="芙芙不服" />
+                    <img :src="logoUrl" alt="小蝶书" />
                 </div>
                 <div class="header-right">
                     <div @click="openSearch" class="circle-btn">

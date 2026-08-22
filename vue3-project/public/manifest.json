@@ -1,6 +1,6 @@
 {
-  "name": "芙芙不服",
-  "short_name": "芙芙不服",
+  "name": "小蝶书",
+  "short_name": "小蝶书",
   "icons": [
     {
       "src": "/android-icon-192x192.png",
@@ -32,5 +32,5 @@
   "display": "standalone",
   "theme_color": "#ff2442",
   "background_color": "#ffffff",
-  "description": "芙芙不服"
+  "description": "小蝶书 - 你的星穹铁道指南"
 }

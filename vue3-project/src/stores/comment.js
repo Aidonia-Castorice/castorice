@@ -104,7 +104,7 @@ export const useCommentStore = defineStore('comment', () => {
                                     user_id: reply.user_display_id || reply.user_id, // UID（用于导航）
                                     user_auto_id: reply.user_auto_id || reply.user_id, // 用户自增ID（用于权限判断）
                                     username: reply.nickname || '匿名用户',
-                                    avatar: reply.user_avatar || new URL('@/assets/imgs/未加载.png', import.meta.url).href,
+                                    avatar: reply.user_avatar || new URL('@/assets/imgs/image-placeholder.png', import.meta.url).href,
                                     verified: reply.verified || 0, // 认证状态
                                     content: reply.content,
                                     time: formatTime(reply.created_at),

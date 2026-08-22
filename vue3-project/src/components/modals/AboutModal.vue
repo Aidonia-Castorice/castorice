@@ -5,9 +5,9 @@
       <div class="about-header">
         <div class="header-content">
           <div class="logo-section">
-            <div class="about-logo"><img :src="logoUrl" alt="芙芙不服" /></div>
+            <div class="about-logo"><img :src="logoUrl" alt="小蝶书" /></div>
 
-            <h2 class="about-title">关于芙芙不服</h2>
+            <h2 class="about-title">关于小蝶书</h2>
           </div>
           <p class="version">v1.3.2</p>
         </div>
@@ -21,13 +21,13 @@
           <div class="intro-section">
             <h3>项目简介</h3>
             <p>
-              芙芙不服校园图文社区是一个面向开发者与学习者的开源示例项目，旨在提供从前端到后端的完整实践范本，帮助大家学习现代 Web 应用的架构设计、工程化与业务实现。
+              小蝶书是一个专注于《崩坏：星穹铁道》的图文指南社区，汇聚角色攻略、配队推荐、光锥遗器搭配、版本资讯等内容，为开拓者提供全面的游戏参考与交流平台。
             </p>
           </div>
           <div class="intro-section">
             <h3>关于本站</h3>
             <p>
-              芙芙不服校园图文社区是一个基于开源项目构建的图文分享平台，支持图文发布、社交互动、内容探索等核心功能。
+              小蝶书是一个基于开源项目构建的星穹铁道图文分享平台，支持攻略发布、角色讨论、版本资讯、社交互动等核心功能，助力每一位开拓者的星穹之旅。
             </p>
           </div>
           <div class="features-section">
@@ -87,7 +87,7 @@
             <h3>版权声明</h3>
             <div class="copyright-content">
               <p>
-                <strong>设计灵感：</strong>本校园图文社区的UI设计和交互体验参考了小红书平台，旨在为下载该开源项目的人员提供一个熟悉的项目体验。
+                <strong>设计灵感：</strong>本社区的UI设计和交互体验参考了小红书平台，旨在为开拓者提供一个熟悉的内容分享与交流体验。
               </p>
               <p>
                 <strong>开源项目：</strong>本项目基于 GPLv3 协议开源，仅供学习交流使用，不用于商业用途。所有代码遵循 GPLv3 开源协议，欢迎技术交流与讨论。
@@ -99,7 +99,7 @@
           </div>
 
           <div class="about-footer">
-            <p>&copy; 2025 芙芙不服校园图文社区</p>
+            <p>&copy; 2025 小蝶书 - 你的星穹铁道指南</p>
           </div>
         </div>
       </div>
@@ -117,7 +117,7 @@ const emit = defineEmits(['close'])
 const { lock, unlock } = useScrollLock()
 
 // 静态资源URL
-const logoUrl = new URL('@/assets/imgs/logo.svg', import.meta.url).href
+const logoUrl = new URL('@/assets/imgs/xiaodieshu-logo.png', import.meta.url).href
 const liciUrl = new URL('@/assets/imgs/栗次元.ico', import.meta.url).href
 const xiaRouUrl = new URL('@/assets/imgs/夏柔.ico', import.meta.url).href
 const baoLuoUrl = new URL('@/assets/imgs/保罗.ico', import.meta.url).href

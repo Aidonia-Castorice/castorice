@@ -3,7 +3,7 @@ import { vUserHover } from './userHover'
 import { vClickOutside } from './clickOutside'
 import vEscapeKey from './escapeKey'
 import defaultAvatar from '@/assets/imgs/avatar.png'
-import defaultPlaceholder from '@/assets/imgs/未加载.png'
+import defaultPlaceholder from '@/assets/imgs/image-placeholder.png'
 
 // 图片加载队列管理
 class ImageLoadQueue {

@@ -799,7 +799,7 @@ const authorData = computed(() => {
   return {
     id: userId,
     name: props.item.nickname || props.item.author || '匿名用户',
-    avatar: props.item.user_avatar || props.item.avatar || new URL('@/assets/imgs/未加载.png', import.meta.url).href,
+    avatar: props.item.user_avatar || props.item.avatar || new URL('@/assets/imgs/image-placeholder.png', import.meta.url).href,
     verified: props.item.verified || props.item.author_verified || 0,
     isFollowing: followState.followed,
     buttonType: followState.buttonType
@@ -847,7 +847,7 @@ const imageList = computed(() => {
   if (props.item.image) {
     return [props.item.image]
   }
-  return [new URL('@/assets/imgs/未加载.png', import.meta.url).href]
+  return [new URL('@/assets/imgs/image-placeholder.png', import.meta.url).href]
 })
 
 const hasMultipleImages = computed(() => imageList.value.length > 1)
@@ -1350,7 +1350,7 @@ const toggleCollect = async () => {
 
 const handleShare = async () => {
   try {
-    const shareUrl = `【${props.item.title}-${props.item.author}| 芙芙不服 - 你的校园图文部落】${window.location.origin}/post?id=${props.item.id}`
+    const shareUrl = `【${props.item.title}-${props.item.author}| 小蝶书 - 你的校园图文部落】${window.location.origin}/post?id=${props.item.id}`
 
     // 检查是否支持现代剪贴板API
     if (navigator.clipboard && navigator.clipboard.writeText) {
