@@ -2311,11 +2311,19 @@ router.post('/users/:id/ban', adminAuth, async (req, res) => {
     console.log(`开始封禁用户 ${userId}，操作人：${adminId}`)
 
     // 检查用户是否存在
-    const [userResult] = await pool.execute('SELECT id FROM users WHERE id = ?', [String(userId)])
+    const [userResult] = await pool.execute('SELECT id, user_id FROM users WHERE id = ?', [String(userId)])
     if (userResult.length === 0) {
       return res.status(HTTP_STATUS.NOT_FOUND).json({
         code: RESPONSE_CODES.NOT_FOUND,
         message: '用户不存在'
+      })
+    }
+
+    // 主账号保护：不得封禁主账号
+    if (userResult[0].user_id === '小蝶书' || userResult[0].id === 1) {
+      return res.status(HTTP_STATUS.FORBIDDEN).json({
+        code: RESPONSE_CODES.FORBIDDEN,
+        message: '无法封禁主账号'
       })
     }
 
