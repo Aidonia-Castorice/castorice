@@ -30,8 +30,7 @@ RUN mkdir -p /app/data /app/uploads
 # Environment
 ENV NODE_ENV=production
 ENV PORT=8080
-ENV DB_TYPE=sqlite
-ENV SQLITE_PATH=/app/data/app.db
+ENV DB_TYPE=postgres
 ENV EMAIL_ENABLED=false
 ENV IMAGE_UPLOAD_STRATEGY=imagehost
 ENV IMAGEHOST_API_URL=https://api.xinyew.cn/api/360tc

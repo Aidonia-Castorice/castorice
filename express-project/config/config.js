@@ -12,10 +12,13 @@ const path = require('path');
 const crypto = require('crypto');
 require('dotenv').config({ path: path.resolve(__dirname, '..', '.env') });
 
-// 根据 DB_TYPE 选择数据库：sqlite（单容器部署）或 mysql（docker-compose）
+// 根据 DB_TYPE 选择数据库：postgres（PandaStack）、sqlite（单容器部署）或 mysql（docker-compose）
 const DB_TYPE = process.env.DB_TYPE || 'mysql';
 let pool;
-if (DB_TYPE === 'sqlite') {
+if (DB_TYPE === 'postgres') {
+  const postgres = require('./postgres');
+  pool = postgres.pool;
+} else if (DB_TYPE === 'sqlite') {
   const sqlite = require('./sqlite');
   pool = sqlite.pool;
 }
@@ -151,8 +154,8 @@ const config = {
   }
 };
 
-// MySQL 连接池（非 sqlite 模式）
-if (DB_TYPE !== 'sqlite') {
+// MySQL 连接池（非 sqlite、非 postgres 模式）
+if (DB_TYPE !== 'sqlite' && DB_TYPE !== 'postgres') {
   const mysql = require('mysql2/promise');
   const dbConfig = {
     ...config.database,
